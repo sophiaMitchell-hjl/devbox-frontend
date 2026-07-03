@@ -1,0 +1,29 @@
+---
+const nav = [
+  { name: '工具', href: '/' },
+  { name: '部署指南', href: '/guide/deploy-to-server' },
+  { name: '关于', href: '/about' },
+];
+---
+
+<header
+  class="sticky top-0 z-50 border-b border-zinc-200/70 bg-white/70 backdrop-blur-xl dark:border-zinc-800/70 dark:bg-zinc-950/70"
+>
+  <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+    <a href="/" class="flex items-center gap-2.5 text-lg font-semibold tracking-tight">
+      <span
+        class="inline-block h-6 w-6 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 shadow-sm shadow-violet-500/30"
+      ></span>
+      <span>Dev<span class="text-gradient">Box</span></span>
+    </a>
+    <nav class="flex items-center gap-7 text-sm text-zinc-600 dark:text-zinc-300">
+      {
+        nav.map((item) => (
+          <a href={item.href} class="transition-colors hover:text-zinc-900 dark:hover:text-white">
+            {item.name}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</header>

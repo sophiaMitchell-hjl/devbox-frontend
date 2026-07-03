@@ -1,0 +1,108 @@
+---
+import ToolPageLayout from '../layouts/ToolPageLayout.astro';
+
+const title = 'JWT 解码器 - 在线解析 Token 的 Header 与 Payload | DevBox';
+const description =
+  '在线 JWT 解码:解析 JSON Web Token 的 Header 与 Payload,自动把 exp/iat 等时间戳转成可读日期。浏览器本地解析,token 不外传。';
+const faqs = [
+  {
+    q: '这个工具会验证签名吗?',
+    a: '不会。验证签名需要密钥,本工具只做解码(展示 token 里的内容),token 全程在你浏览器本地处理、不上传。',
+  },
+  {
+    q: 'JWT 里的信息安全吗?',
+    a: 'JWT 的 Header 和 Payload 只是 Base64 编码、并非加密,任何人都能解开查看。因此不要在 Payload 里放敏感明文信息。',
+  },
+];
+const areaCls =
+  'w-full rounded-xl border border-zinc-300 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+---
+
+<ToolPageLayout slug="jwt" title={title} description={description} faqs={faqs}>
+  <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+    JWT Token <span class="font-normal text-zinc-400">(可粘贴 AI 或接口返回的 token)</span>
+  </label>
+  <textarea id="in" class={`${areaCls} h-32`} placeholder="eyJhbGciOiJI…（三段以 . 分隔)" spellcheck="false"></textarea>
+  <p id="err" class="mt-2 hidden text-sm text-red-500"></p>
+
+  <div id="result" class="mt-5 hidden space-y-4">
+    <div>
+      <p class="mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">Header(算法与类型)</p>
+      <pre class="rounded-xl bg-zinc-900 p-4 font-mono text-sm whitespace-pre-wrap break-words text-zinc-100"><code id="header"></code></pre>
+    </div>
+    <div>
+      <p class="mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">Payload(数据)</p>
+      <pre class="rounded-xl bg-zinc-900 p-4 font-mono text-sm whitespace-pre-wrap break-words text-zinc-100"><code id="payload"></code></pre>
+    </div>
+    <div id="times" class="space-y-1.5 text-sm"></div>
+  </div>
+
+  <script>
+    const inEl = document.getElementById('in') as HTMLTextAreaElement;
+    const errEl = document.getElementById('err')!;
+    const result = document.getElementById('result')!;
+    const headerEl = document.getElementById('header')!;
+    const payloadEl = document.getElementById('payload')!;
+    const timesEl = document.getElementById('times')!;
+
+    function b64urlDecode(s: string) {
+      s = s.replace(/-/g, '+').replace(/_/g, '/');
+      while (s.length % 4) s += '=';
+      const bin = atob(s);
+      const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    }
+
+    const WEEK = ['日', '一', '二', '三', '四', '五', '六'];
+    function fmt(ms: number) {
+      const d = new Date(ms);
+      const p = (n: number) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())} 周${WEEK[d.getDay()]}`;
+    }
+    function timeRow(label: string, sec: number) {
+      const now = Date.now() / 1000;
+      let tag = '';
+      if (label.includes('过期')) {
+        tag =
+          sec < now
+            ? '<span class="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-600 dark:bg-red-500/10 dark:text-red-400">已过期</span>'
+            : '<span class="ml-2 rounded bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">有效</span>';
+      }
+      return `<div class="text-zinc-600 dark:text-zinc-300"><span class="text-zinc-400">${label}:</span> ${fmt(sec * 1000)}${tag}</div>`;
+    }
+
+    function run() {
+      const v = inEl.value.trim();
+      errEl.classList.add('hidden');
+      if (!v) {
+        result.classList.add('hidden');
+        return;
+      }
+      const parts = v.split('.');
+      if (parts.length < 2) {
+        result.classList.add('hidden');
+        errEl.textContent = '格式不对:JWT 应为「header.payload.signature」三段(以 . 分隔)';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      try {
+        const header = JSON.parse(b64urlDecode(parts[0]));
+        const payload = JSON.parse(b64urlDecode(parts[1]));
+        headerEl.textContent = JSON.stringify(header, null, 2);
+        payloadEl.textContent = JSON.stringify(payload, null, 2);
+        let rows = '';
+        if (typeof payload.iat === 'number') rows += timeRow('签发时间 (iat)', payload.iat);
+        if (typeof payload.nbf === 'number') rows += timeRow('生效时间 (nbf)', payload.nbf);
+        if (typeof payload.exp === 'number') rows += timeRow('过期时间 (exp)', payload.exp);
+        timesEl.innerHTML = rows;
+        result.classList.remove('hidden');
+      } catch {
+        result.classList.add('hidden');
+        errEl.textContent = '解码失败:token 内容不是有效的 Base64/JSON';
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    inEl.addEventListener('input', run);
+  </script>
+</ToolPageLayout>

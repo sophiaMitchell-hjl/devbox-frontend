@@ -1,0 +1,17 @@
+# Fly.io 部署示例:在 api/ 目录执行 `fly launch --no-deploy` 生成后可参考本文件,再 `fly deploy`。
+app = "devbox-api"
+primary_region = "hkg"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

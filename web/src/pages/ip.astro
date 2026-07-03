@@ -1,0 +1,83 @@
+---
+import ToolPageLayout from '../layouts/ToolPageLayout.astro';
+
+const title = 'IP 地址查询 - 查看我的公网 IP 与归属地 | DevBox';
+const description =
+  '在线查询你的公网 IP 地址、归属地、运营商与时区。由 DevBox 后端返回,不记录查询记录。';
+const faqs = [
+  {
+    q: '为什么这个工具需要联网,而别的工具不用?',
+    a: '公网 IP 只有服务器才能看到(你的浏览器本身并不知道自己的公网 IP),所以本工具会向 DevBox 后端发起一次请求。其余工具都在你的浏览器本地运行、不联网。',
+  },
+  {
+    q: '归属地准确吗?',
+    a: '归属地基于公开的 IP 数据库,精确到城市级别,可能有偏差;使用代理/VPN 时显示的是出口节点的位置。',
+  },
+];
+---
+
+<ToolPageLayout
+  slug="ip"
+  title={title}
+  description={description}
+  faqs={faqs}
+  note="本工具需要服务器来获取你的公网 IP,会向 DevBox 后端发起一次请求;后端不记录你的查询。"
+>
+  <div class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <div class="mb-4 flex items-center justify-between">
+      <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">你的网络信息</span>
+      <button id="refresh" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">刷新</button>
+    </div>
+    <div id="ip-big" class="mb-4 font-mono text-3xl font-bold text-zinc-900 dark:text-white">…</div>
+    <div id="out" class="divide-y divide-zinc-100 dark:divide-zinc-800"></div>
+    <p id="err" class="mt-4 hidden rounded-lg bg-amber-50 p-3 text-sm text-amber-700 dark:bg-amber-500/5 dark:text-amber-300"></p>
+  </div>
+
+  <script>
+    import { apiGet } from '../lib/api';
+
+    const bigEl = document.getElementById('ip-big')!;
+    const out = document.getElementById('out')!;
+    const err = document.getElementById('err')!;
+
+    interface IpInfo {
+      ip: string;
+      userAgent?: string;
+      language?: string;
+      country?: string;
+      region?: string;
+      city?: string;
+      isp?: string;
+      timezone?: string;
+    }
+
+    function row(label: string, val?: string) {
+      if (!val) return '';
+      return `<div class="flex items-center justify-between gap-3 py-2.5"><span class="text-sm text-zinc-500 dark:text-zinc-400">${label}</span><span class="text-right font-mono text-sm text-zinc-800 dark:text-zinc-100">${val}</span></div>`;
+    }
+
+    async function load() {
+      err.classList.add('hidden');
+      bigEl.textContent = '查询中…';
+      out.innerHTML = '';
+      try {
+        const d = await apiGet<IpInfo>('/api/ip');
+        bigEl.textContent = d.ip || '(未知)';
+        const loc = [d.country, d.region, d.city].filter(Boolean).join(' · ');
+        out.innerHTML =
+          row('归属地', loc) +
+          row('运营商', d.isp) +
+          row('时区', d.timezone) +
+          row('浏览器语言', d.language) +
+          row('User-Agent', d.userAgent);
+      } catch {
+        bigEl.textContent = '—';
+        err.textContent = '无法连接后端服务(/api/ip)。本地开发请先启动 FastAPI:.venv/Scripts/python -m uvicorn main:app --app-dir api --port 8000';
+        err.classList.remove('hidden');
+      }
+    }
+
+    document.getElementById('refresh')!.addEventListener('click', load);
+    load();
+  </script>
+</ToolPageLayout>

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api
+
+Sitemap: https://devbox.nextlink.me/sitemap-index.xml

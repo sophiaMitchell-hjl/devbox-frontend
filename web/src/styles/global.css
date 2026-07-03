@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+    "Cascadia Code", monospace;
+}
+
+:root {
+  color-scheme: light dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* 输入/输出示例:淡灰色占位符,聚焦(点击)后隐藏 */
+:where(input, textarea)::placeholder {
+  color: var(--color-zinc-400);
+  opacity: 1;
+}
+:where(input, textarea):focus::placeholder {
+  color: transparent;
+}
+
+/* 品牌渐变文字 */
+.text-gradient {
+  background-image: linear-gradient(120deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 面包屑分隔符(读屏不朗读) */
+.crumb + .crumb::before {
+  content: "›";
+  margin: 0 0.5rem;
+  color: var(--color-zinc-400);
+}
+
+/* 代码块右上角"复制"小按钮 */
+.copy-mini {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: rgb(255 255 255 / 0.1);
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  color: rgb(228 228 231);
+  transition: background-color 0.15s;
+}
+.copy-mini:hover {
+  background-color: rgb(255 255 255 / 0.2);
+}
+
+/* 正文内联代码 */
+.inline-code {
+  border-radius: 0.25rem;
+  background-color: var(--color-zinc-100);
+  padding: 0.1rem 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--color-violet-600);
+}
+@media (prefers-color-scheme: dark) {
+  .inline-code {
+    background-color: var(--color-zinc-800);
+    color: var(--color-violet-300);
+  }
+}
+
+/* 文档/正文页排版 */
+.prose-doc h2 {
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-zinc-900);
+}
+.prose-doc h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-zinc-900);
+}
+.prose-doc p {
+  margin: 0.75rem 0;
+  line-height: 1.8;
+  color: var(--color-zinc-600);
+}
+.prose-doc ul {
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+.prose-doc li {
+  margin: 0.35rem 0;
+  line-height: 1.75;
+  color: var(--color-zinc-600);
+}
+.prose-doc a {
+  color: var(--color-violet-600);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-doc strong {
+  color: var(--color-zinc-900);
+  font-weight: 600;
+}
+@media (prefers-color-scheme: dark) {
+  .prose-doc h2,
+  .prose-doc h3,
+  .prose-doc strong {
+    color: #fff;
+  }
+  .prose-doc p,
+  .prose-doc li {
+    color: var(--color-zinc-400);
+  }
+  .prose-doc a {
+    color: var(--color-violet-400);
+  }
+}

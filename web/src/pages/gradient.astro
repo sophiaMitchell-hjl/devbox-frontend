@@ -1,0 +1,138 @@
+---
+import ToolPageLayout from '../layouts/ToolPageLayout.astro';
+
+const title = 'CSS 渐变生成器 - 可视化生成 linear/radial 渐变 | DevBox';
+const description =
+  '在线 CSS 渐变生成器:拖动调节颜色、位置与角度,实时预览并生成 linear-gradient / radial-gradient 代码,复制即用。浏览器本地运行。';
+const faqs = [
+  {
+    q: '生成的渐变怎么用?',
+    a: '把输出的 background 那行 CSS 贴到元素的样式里即可,例如 .btn { background: linear-gradient(...); }。',
+  },
+];
+---
+
+<ToolPageLayout slug="gradient" title={title} description={description} faqs={faqs}>
+  <div class="grid gap-6 md:grid-cols-2">
+    <div class="space-y-4">
+      <div class="inline-flex rounded-xl border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-800 dark:bg-zinc-900">
+        <button data-type="linear" class="type-btn rounded-lg px-4 py-1.5 text-sm font-medium">线性</button>
+        <button data-type="radial" class="type-btn rounded-lg px-4 py-1.5 text-sm font-medium">径向</button>
+      </div>
+
+      <div id="angle-wrap">
+        <label class="mb-1 flex items-center justify-between text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          角度 <span id="angle-val" class="font-mono text-zinc-400">90°</span>
+        </label>
+        <input id="angle" type="range" min="0" max="360" value="90" class="w-full accent-violet-600" />
+      </div>
+
+      <div>
+        <div class="mb-1 flex items-center justify-between">
+          <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">色标</span>
+          <button id="add-stop" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">+ 添加色标</button>
+        </div>
+        <div id="stops" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <div>
+      <div id="preview" class="h-48 rounded-2xl border border-zinc-200 dark:border-zinc-800"></div>
+      <div class="mt-3 flex items-center justify-between">
+        <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">CSS 代码</span>
+        <button id="copy" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">复制</button>
+      </div>
+      <pre class="mt-1 rounded-xl bg-zinc-900 p-4 font-mono text-sm whitespace-pre-wrap break-words text-zinc-100"><code id="out"></code></pre>
+    </div>
+  </div>
+
+  <script>
+    let type: 'linear' | 'radial' = 'linear';
+    let stops = [
+      { color: '#6366f1', pos: 0 },
+      { color: '#d946ef', pos: 100 },
+    ];
+    const stopsEl = document.getElementById('stops')!;
+    const preview = document.getElementById('preview')!;
+    const out = document.getElementById('out')!;
+    const angle = document.getElementById('angle') as HTMLInputElement;
+    const angleVal = document.getElementById('angle-val')!;
+
+    function renderStops() {
+      stopsEl.innerHTML = stops
+        .map(
+          (s, i) => `
+        <div class="flex items-center gap-2">
+          <input type="color" value="${s.color}" data-i="${i}" class="stop-color h-9 w-12 cursor-pointer rounded border border-zinc-300 bg-transparent dark:border-zinc-700" />
+          <input type="range" min="0" max="100" value="${s.pos}" data-i="${i}" class="stop-pos flex-1 accent-violet-600" />
+          <span class="w-10 text-right font-mono text-xs text-zinc-400">${s.pos}%</span>
+          ${stops.length > 2 ? `<button data-i="${i}" class="stop-del text-zinc-400 hover:text-red-500">✕</button>` : ''}
+        </div>`
+        )
+        .join('');
+    }
+
+    function css() {
+      const list = [...stops].sort((a, b) => a.pos - b.pos).map((s) => `${s.color} ${s.pos}%`).join(', ');
+      return type === 'linear'
+        ? `linear-gradient(${angle.value}deg, ${list})`
+        : `radial-gradient(circle, ${list})`;
+    }
+
+    function recompute() {
+      const value = css();
+      preview.style.background = value;
+      out.textContent = `background: ${value};`;
+    }
+
+    stopsEl.addEventListener('input', (e) => {
+      const t = e.target as HTMLElement;
+      const i = Number(t.dataset.i);
+      if (t.classList.contains('stop-color')) stops[i].color = (t as HTMLInputElement).value;
+      if (t.classList.contains('stop-pos')) {
+        stops[i].pos = Number((t as HTMLInputElement).value);
+        renderStops();
+      }
+      recompute();
+    });
+    stopsEl.addEventListener('click', (e) => {
+      const t = (e.target as HTMLElement).closest('.stop-del') as HTMLElement | null;
+      if (!t) return;
+      stops.splice(Number(t.dataset.i), 1);
+      renderStops();
+      recompute();
+    });
+    document.getElementById('add-stop')!.addEventListener('click', () => {
+      stops.push({ color: '#22d3ee', pos: 50 });
+      renderStops();
+      recompute();
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.type-btn').forEach((b) =>
+      b.addEventListener('click', () => {
+        type = b.dataset.type as 'linear' | 'radial';
+        document.querySelectorAll<HTMLButtonElement>('.type-btn').forEach((x) => {
+          const active = x.dataset.type === type;
+          x.classList.toggle('bg-white', active);
+          x.classList.toggle('text-violet-600', active);
+          x.classList.toggle('shadow-sm', active);
+          x.classList.toggle('dark:bg-zinc-800', active);
+          x.classList.toggle('text-zinc-500', !active);
+        });
+        document.getElementById('angle-wrap')!.classList.toggle('hidden', type !== 'linear');
+        recompute();
+      })
+    );
+    angle.addEventListener('input', () => {
+      angleVal.textContent = angle.value + '°';
+      recompute();
+    });
+    document.getElementById('copy')!.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(out.textContent || '');
+    });
+
+    document.querySelector<HTMLButtonElement>('.type-btn[data-type="linear"]')!.click();
+    renderStops();
+    recompute();
+  </script>
+</ToolPageLayout>

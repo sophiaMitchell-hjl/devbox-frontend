@@ -1,0 +1,103 @@
+---
+import ToolPageLayout from '../layouts/ToolPageLayout.astro';
+
+const title = 'JSON 格式化 / 校验 - 在线美化、压缩与排序 | DevBox';
+const description =
+  '在线 JSON 格式化工具:一键美化、压缩、校验 JSON,可按键名排序,语法错误精准提示。浏览器本地处理,可用于校验 AI 生成的 JSON。';
+const faqs = [
+  {
+    q: 'JSON 报错怎么定位?',
+    a: '点"校验/格式化"后,若有语法错误会显示错误信息(通常包含出错位置)。常见问题是多了逗号、少了引号、用了单引号或注释——标准 JSON 都不允许。',
+  },
+];
+const areaCls =
+  'w-full h-96 rounded-xl border border-zinc-300 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+---
+
+<ToolPageLayout slug="json" title={title} description={description} faqs={faqs}>
+  <div class="mb-4 flex flex-wrap items-center gap-2">
+    <button data-act="pretty" class="act-btn rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">格式化</button>
+    <button data-act="min" class="act-btn rounded-lg border border-zinc-300 px-4 py-1.5 text-sm text-zinc-700 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-200">压缩</button>
+    <button data-act="sort" class="act-btn rounded-lg border border-zinc-300 px-4 py-1.5 text-sm text-zinc-700 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-200">排序键名</button>
+    <label class="cursor-pointer rounded-lg border border-zinc-300 px-4 py-1.5 text-sm text-zinc-700 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-200">
+      上传 JSON 文件
+      <input id="file" type="file" accept=".json,application/json,.txt" class="hidden" />
+    </label>
+    <button id="copy" type="button" class="ml-auto text-xs font-medium text-violet-600 dark:text-violet-400">复制结果</button>
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-2">
+    <div>
+      <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">输入</label>
+      <textarea id="in" class={areaCls} data-clear-target="out" placeholder='示例输入:{"a":1,"b":[2,3]}' spellcheck="false"></textarea>
+    </div>
+    <div>
+      <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">输出</label>
+      <textarea id="out" class={areaCls} readonly placeholder='示例输出:{ "a": 1, "b": [2, 3] }'></textarea>
+    </div>
+  </div>
+  <p id="msg" class="mt-3 text-sm"></p>
+
+  <script>
+    const inEl = document.getElementById('in') as HTMLTextAreaElement;
+    const outEl = document.getElementById('out') as HTMLTextAreaElement;
+    const msg = document.getElementById('msg')!;
+
+    function sortKeys(v: any): any {
+      if (Array.isArray(v)) return v.map(sortKeys);
+      if (v && typeof v === 'object') {
+        return Object.keys(v)
+          .sort()
+          .reduce((acc: any, k) => {
+            acc[k] = sortKeys(v[k]);
+            return acc;
+          }, {});
+      }
+      return v;
+    }
+
+    function run(act: string) {
+      const raw = inEl.value.trim();
+      if (!raw) {
+        outEl.value = '';
+        msg.textContent = '';
+        return;
+      }
+      let obj: any;
+      try {
+        obj = JSON.parse(raw);
+      } catch (e) {
+        outEl.value = '';
+        msg.className = 'mt-3 text-sm text-red-500';
+        msg.textContent = '❌ 无效 JSON:' + (e as Error).message;
+        return;
+      }
+      if (act === 'sort') obj = sortKeys(obj);
+      outEl.value = act === 'min' ? JSON.stringify(obj) : JSON.stringify(obj, null, 2);
+      msg.className = 'mt-3 text-sm text-emerald-600 dark:text-emerald-400';
+      msg.textContent = '✓ JSON 合法';
+    }
+
+    document.querySelectorAll<HTMLButtonElement>('.act-btn').forEach((b) =>
+      b.addEventListener('click', () => run(b.dataset.act!))
+    );
+    inEl.addEventListener('input', () => run('pretty'));
+
+    // 上传 JSON 文件
+    const fileEl = document.getElementById('file') as HTMLInputElement;
+    fileEl.addEventListener('change', () => {
+      const f = fileEl.files?.[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        inEl.value = String(reader.result ?? '');
+        run('pretty');
+      };
+      reader.readAsText(f);
+      fileEl.value = ''; // 允许再次选同一文件
+    });
+    document.getElementById('copy')!.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(outEl.value);
+    });
+  </script>
+</ToolPageLayout>

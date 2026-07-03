@@ -1,0 +1,65 @@
+---
+import ToolPageLayout from '../layouts/ToolPageLayout.astro';
+
+const title = 'Unicode 码点查看 - UTF-8/UTF-16 编码查询 | DevBox';
+const description =
+  '在线查看文本每个字符的 Unicode 码点(U+)、十进制、UTF-8 与 UTF-16 字节编码,帮助排查乱码与特殊字符。浏览器本地计算。';
+const faqs = [
+  {
+    q: '一个 emoji 为什么占好几个码点?',
+    a: '很多 emoji 由多个码点组合而成(如带肤色、ZWJ 连接的组合 emoji),所以会显示成多行;这也是它们在有些系统里显示异常的原因。',
+  },
+];
+---
+
+<ToolPageLayout slug="unicode" title={title} description={description} faqs={faqs}>
+  <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">输入文本</label>
+  <input id="in" type="text" value="Aa中🚀" class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-lg text-zinc-900 outline-none focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+
+  <div class="mt-5 overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+    <table class="w-full text-sm">
+      <thead class="bg-zinc-50 text-left text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+        <tr>
+          <th class="px-3 py-2 font-medium">字符</th>
+          <th class="px-3 py-2 font-medium">码点</th>
+          <th class="px-3 py-2 font-medium">十进制</th>
+          <th class="px-3 py-2 font-medium">UTF-8</th>
+          <th class="px-3 py-2 font-medium">UTF-16</th>
+        </tr>
+      </thead>
+      <tbody id="rows" class="divide-y divide-zinc-100 font-mono dark:divide-zinc-800"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const inEl = document.getElementById('in') as HTMLInputElement;
+    const rows = document.getElementById('rows')!;
+
+    const hex = (n: number) => n.toString(16).toUpperCase().padStart(2, '0');
+    function utf8(cp: number) {
+      return [...new TextEncoder().encode(String.fromCodePoint(cp))].map((b) => hex(b)).join(' ');
+    }
+    function utf16(cp: number) {
+      const s = String.fromCodePoint(cp);
+      return Array.from({ length: s.length }, (_, i) => s.charCodeAt(i).toString(16).toUpperCase().padStart(4, '0')).join(' ');
+    }
+
+    function run() {
+      const chars = [...inEl.value];
+      rows.innerHTML = chars
+        .map((ch) => {
+          const cp = ch.codePointAt(0)!;
+          return `<tr>
+            <td class="px-3 py-2 text-lg">${ch === ' ' ? '␠' : ch.replace(/</g, '&lt;')}</td>
+            <td class="px-3 py-2 text-violet-600 dark:text-violet-400">U+${cp.toString(16).toUpperCase().padStart(4, '0')}</td>
+            <td class="px-3 py-2 text-zinc-600 dark:text-zinc-300">${cp}</td>
+            <td class="px-3 py-2 text-zinc-600 dark:text-zinc-300">${utf8(cp)}</td>
+            <td class="px-3 py-2 text-zinc-600 dark:text-zinc-300">${utf16(cp)}</td>
+          </tr>`;
+        })
+        .join('');
+    }
+    inEl.addEventListener('input', run);
+    run();
+  </script>
+</ToolPageLayout>

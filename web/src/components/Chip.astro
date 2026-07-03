@@ -1,0 +1,21 @@
+---
+import type { Item } from '../lib/roadmap';
+const { item } = Astro.props as { item: Item };
+const href = item.href ?? (item.slug ? `/${item.slug}` : undefined);
+const clickable = item.live && href;
+---
+
+{
+  clickable ? (
+    <a
+      href={href}
+      class="inline-flex items-center gap-1 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700 transition-colors hover:border-violet-400 hover:bg-violet-100 dark:border-violet-500/25 dark:bg-violet-500/10 dark:text-violet-300 dark:hover:border-violet-500/50"
+    >
+      {item.name} →
+    </a>
+  ) : (
+    <span class="inline-flex items-center rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-500">
+      {item.name}
+    </span>
+  )
+}

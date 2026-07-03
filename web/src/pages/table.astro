@@ -1,0 +1,175 @@
+---
+import ToolPageLayout from '../layouts/ToolPageLayout.astro';
+
+const title = '表格转换器 - CSV/JSON/Markdown/YAML/HTML 互转 | DevBox';
+const description =
+  '在线表格格式互转:CSV、JSON、Markdown、YAML、HTML 表格之间任意转换,粘贴即出,复制即用。浏览器本地处理,不上传数据。';
+const faqs = [
+  {
+    q: '支持哪些格式互转?',
+    a: 'CSV、JSON(对象数组)、Markdown 表格、YAML、HTML 表格,共 5 种格式两两互转。选好"从"和"到"即可。',
+  },
+  {
+    q: 'JSON 是什么结构?',
+    a: '使用"对象数组"结构,即 [{列1:值, 列2:值}, ...],每个对象是一行、键是列名——这是接口返回最常见的表格 JSON 形式。',
+  },
+];
+const formats = [
+  { v: 'csv', label: 'CSV' },
+  { v: 'json', label: 'JSON' },
+  { v: 'markdown', label: 'Markdown' },
+  { v: 'yaml', label: 'YAML' },
+  { v: 'html', label: 'HTML' },
+];
+const selCls =
+  'rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+const areaCls =
+  'w-full h-80 rounded-xl border border-zinc-300 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+---
+
+<ToolPageLayout slug="table" title={title} description={description} faqs={faqs}>
+  <div class="mb-4 flex flex-wrap items-center gap-3">
+    <label class="text-sm text-zinc-600 dark:text-zinc-300">从
+      <select id="from" class={`ml-1 ${selCls}`}>{formats.map((f) => <option value={f.v}>{f.label}</option>)}</select>
+    </label>
+    <button id="swap" type="button" class="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm dark:border-zinc-700 dark:text-zinc-200" title="互换">⇄</button>
+    <label class="text-sm text-zinc-600 dark:text-zinc-300">到
+      <select id="to" class={`ml-1 ${selCls}`}>{formats.map((f) => <option value={f.v} selected={f.v === 'json'}>{f.label}</option>)}</select>
+    </label>
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-2">
+    <div>
+      <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">输入</label>
+      <textarea id="in" class={areaCls} data-clear-target="out" spellcheck="false" placeholder="示例输入:name,age / 张三,28 / 李四,32"></textarea>
+    </div>
+    <div>
+      <div class="mb-1 flex items-center justify-between">
+        <label class="text-sm font-medium text-zinc-700 dark:text-zinc-300">输出</label>
+        <button id="copy" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">复制</button>
+      </div>
+      <textarea id="out" class={areaCls} readonly placeholder="示例输出:转换结果显示在这里"></textarea>
+    </div>
+  </div>
+  <p id="err" class="mt-3 hidden text-sm text-red-500"></p>
+
+  <script>
+    import yaml from 'js-yaml';
+
+    const fromEl = document.getElementById('from') as HTMLSelectElement;
+    const toEl = document.getElementById('to') as HTMLSelectElement;
+    const inEl = document.getElementById('in') as HTMLTextAreaElement;
+    const outEl = document.getElementById('out') as HTMLTextAreaElement;
+    const err = document.getElementById('err')!;
+
+    type Grid = string[][];
+
+    // ---- 解析为 2D 网格 ----
+    function parseCSV(text: string): Grid {
+      const rows: Grid = [];
+      let row: string[] = [], cur = '', q = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (q) {
+          if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+          else cur += c;
+        } else if (c === '"') q = true;
+        else if (c === ',') { row.push(cur); cur = ''; }
+        else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+        else if (c !== '\r') cur += c;
+      }
+      if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+      return rows.filter((r) => r.some((c) => c !== ''));
+    }
+    function parseMarkdown(text: string): Grid {
+      const grid: Grid = [];
+      for (const l of text.split('\n').map((x) => x.trim()).filter(Boolean)) {
+        if (/-/.test(l) && /^\|?[\s:|-]+\|?$/.test(l)) continue; // 分隔行
+        grid.push(l.replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim()));
+      }
+      return grid;
+    }
+    function parseHTML(text: string): Grid {
+      const doc = new DOMParser().parseFromString(text, 'text/html');
+      return [...doc.querySelectorAll('tr')].map((tr) =>
+        [...tr.querySelectorAll('th,td')].map((td) => (td.textContent || '').trim())
+      );
+    }
+    function objectsToGrid(objs: any): Grid {
+      const arr = Array.isArray(objs) ? objs : [objs];
+      const keys: string[] = [];
+      arr.forEach((o) => Object.keys(o || {}).forEach((k) => { if (!keys.includes(k)) keys.push(k); }));
+      return [keys, ...arr.map((o) => keys.map((k) => (o?.[k] ?? '').toString()))];
+    }
+    function gridToObjects(grid: Grid) {
+      const [head = [], ...rows] = grid;
+      return rows.map((r) => Object.fromEntries(head.map((h, i) => [h, r[i] ?? ''])));
+    }
+
+    // ---- 序列化 ----
+    const csvCell = (v: string) => (/[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v);
+    const toCSV = (g: Grid) => g.map((r) => r.map((c) => csvCell(c ?? '')).join(',')).join('\n');
+    function toMarkdown(g: Grid) {
+      if (!g.length) return '';
+      const cols = Math.max(...g.map((r) => r.length));
+      const norm = g.map((r) => { const c = [...r]; while (c.length < cols) c.push(''); return c; });
+      return [
+        '| ' + norm[0].join(' | ') + ' |',
+        '| ' + norm[0].map(() => '---').join(' | ') + ' |',
+        ...norm.slice(1).map((r) => '| ' + r.join(' | ') + ' |'),
+      ].join('\n');
+    }
+    const htmlEsc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    function toHTML(g: Grid) {
+      if (!g.length) return '';
+      const head = `  <thead>\n    <tr>${g[0].map((h) => `<th>${htmlEsc(h)}</th>`).join('')}</tr>\n  </thead>`;
+      const body = `  <tbody>\n${g.slice(1).map((r) => `    <tr>${r.map((c) => `<td>${htmlEsc(c)}</td>`).join('')}</tr>`).join('\n')}\n  </tbody>`;
+      return `<table>\n${head}\n${body}\n</table>`;
+    }
+
+    function toGrid(input: string, from: string): Grid {
+      if (from === 'csv') return parseCSV(input);
+      if (from === 'markdown') return parseMarkdown(input);
+      if (from === 'html') return parseHTML(input);
+      if (from === 'json') {
+        const o = JSON.parse(input);
+        if (Array.isArray(o) && o.length && Array.isArray(o[0])) return o.map((r: any[]) => r.map(String));
+        return objectsToGrid(o);
+      }
+      if (from === 'yaml') return objectsToGrid(yaml.load(input));
+      return [];
+    }
+    function fromGrid(g: Grid, to: string): string {
+      if (to === 'csv') return toCSV(g);
+      if (to === 'markdown') return toMarkdown(g);
+      if (to === 'html') return toHTML(g);
+      if (to === 'json') return JSON.stringify(gridToObjects(g), null, 2);
+      if (to === 'yaml') return yaml.dump(gridToObjects(g));
+      return '';
+    }
+
+    function run() {
+      err.classList.add('hidden');
+      const input = inEl.value.trim();
+      if (!input) { outEl.value = ''; return; }
+      try {
+        outEl.value = fromGrid(toGrid(input, fromEl.value), toEl.value);
+      } catch (e) {
+        outEl.value = '';
+        err.textContent = '转换失败:请检查输入格式是否与"从"一致 —— ' + (e as Error).message;
+        err.classList.remove('hidden');
+      }
+    }
+
+    [inEl, fromEl, toEl].forEach((el) => el.addEventListener('input', run));
+    document.getElementById('swap')!.addEventListener('click', () => {
+      const f = fromEl.value; fromEl.value = toEl.value; toEl.value = f;
+      inEl.value = outEl.value || inEl.value;
+      run();
+    });
+    document.getElementById('copy')!.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(outEl.value);
+    });
+    run();
+  </script>
+</ToolPageLayout>

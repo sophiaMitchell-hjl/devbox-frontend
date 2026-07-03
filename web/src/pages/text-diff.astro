@@ -1,0 +1,83 @@
+---
+import ToolPageLayout from '../layouts/ToolPageLayout.astro';
+
+const title = '文本 Diff 对比 - 在线逐行比较两段文本差异 | DevBox';
+const description =
+  '在线文本 Diff:逐行对比两段文本,高亮新增、删除与修改的行,并统计差异数量。适合对比配置、代码与文案。浏览器本地计算。';
+const faqs = [
+  {
+    q: '它是按行还是按字符对比?',
+    a: '按行对比,基于最长公共子序列(LCS)算法找出行级的增删。这对配置、代码、文案的版本对比最直观。',
+  },
+];
+const areaCls =
+  'w-full h-56 rounded-xl border border-zinc-300 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+const aDefault = '第一行\n第二行\n第三行';
+const bDefault = '第一行\n第二行(改)\n第三行\n第四行';
+---
+
+<ToolPageLayout slug="text-diff" title={title} description={description} faqs={faqs}>
+  <div class="grid gap-4 md:grid-cols-2">
+    <div>
+      <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">原文</label>
+      <textarea id="a" class={areaCls} spellcheck="false">{aDefault}</textarea>
+    </div>
+    <div>
+      <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">新文</label>
+      <textarea id="b" class={areaCls} spellcheck="false">{bDefault}</textarea>
+    </div>
+  </div>
+
+  <div class="mt-5">
+    <div class="mb-2 flex items-center gap-4 text-sm">
+      <span class="font-medium text-zinc-700 dark:text-zinc-300">对比结果</span>
+      <span id="stat" class="text-xs text-zinc-400"></span>
+    </div>
+    <div id="out" class="overflow-x-auto rounded-xl border border-zinc-200 bg-white font-mono text-sm dark:border-zinc-800 dark:bg-zinc-900"></div>
+  </div>
+
+  <script>
+    const aEl = document.getElementById('a') as HTMLTextAreaElement;
+    const bEl = document.getElementById('b') as HTMLTextAreaElement;
+    const out = document.getElementById('out')!;
+    const stat = document.getElementById('stat')!;
+
+    interface Op { t: '=' | '-' | '+'; v: string; }
+    function diff(a: string[], b: string[]): Op[] {
+      const m = a.length, n = b.length;
+      const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+      for (let i = m - 1; i >= 0; i--)
+        for (let j = n - 1; j >= 0; j--)
+          dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+      const ops: Op[] = [];
+      let i = 0, j = 0;
+      while (i < m && j < n) {
+        if (a[i] === b[j]) { ops.push({ t: '=', v: a[i] }); i++; j++; }
+        else if (dp[i + 1][j] >= dp[i][j + 1]) { ops.push({ t: '-', v: a[i] }); i++; }
+        else { ops.push({ t: '+', v: b[j] }); j++; }
+      }
+      while (i < m) ops.push({ t: '-', v: a[i++] });
+      while (j < n) ops.push({ t: '+', v: b[j++] });
+      return ops;
+    }
+
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    function run() {
+      const ops = diff(aEl.value.split('\n'), bEl.value.split('\n'));
+      let add = 0, del = 0;
+      out.innerHTML = ops
+        .map((o) => {
+          if (o.t === '+') { add++; return `<div class="flex gap-2 bg-emerald-50 px-3 py-0.5 dark:bg-emerald-500/10"><span class="w-4 select-none text-emerald-500">+</span><span class="whitespace-pre-wrap break-all text-emerald-800 dark:text-emerald-300">${esc(o.v) || ' '}</span></div>`; }
+          if (o.t === '-') { del++; return `<div class="flex gap-2 bg-red-50 px-3 py-0.5 dark:bg-red-500/10"><span class="w-4 select-none text-red-500">−</span><span class="whitespace-pre-wrap break-all text-red-800 line-through dark:text-red-300">${esc(o.v) || ' '}</span></div>`; }
+          return `<div class="flex gap-2 px-3 py-0.5"><span class="w-4 select-none text-zinc-300 dark:text-zinc-600"> </span><span class="whitespace-pre-wrap break-all text-zinc-600 dark:text-zinc-400">${esc(o.v) || ' '}</span></div>`;
+        })
+        .join('');
+      stat.innerHTML = `<span class="text-emerald-600 dark:text-emerald-400">+${add}</span> · <span class="text-red-500">−${del}</span>`;
+    }
+
+    aEl.addEventListener('input', run);
+    bEl.addEventListener('input', run);
+    run();
+  </script>
+</ToolPageLayout>

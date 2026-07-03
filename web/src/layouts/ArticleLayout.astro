@@ -1,0 +1,129 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import { TYPE_LABEL } from '../lib/articles';
+
+interface Sibling {
+  slug: string;
+  title: string;
+  type: string;
+}
+interface Props {
+  slug: string;
+  title: string;
+  description: string;
+  seoTitle?: string;
+  type: string;
+  updated?: string;
+  faqs: { q: string; a: string }[];
+  toolSlug: string;
+  toolShort: string;
+  toolTitle: string;
+  siblings: Sibling[];
+}
+const {
+  slug,
+  title,
+  description,
+  seoTitle,
+  type,
+  updated,
+  faqs,
+  toolSlug,
+  toolShort,
+  toolTitle,
+  siblings,
+} = Astro.props;
+
+const pageTitle = seoTitle ?? `${title} | DevBox`;
+const crumbs = [
+  { name: '首页', href: '/' },
+  { name: toolShort, href: `/${toolSlug}` },
+  { name: TYPE_LABEL[type] ?? title },
+];
+const others = siblings.filter((s) => s.slug !== slug);
+
+const articleJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: title,
+  description,
+  ...(updated ? { dateModified: updated } : {}),
+};
+const faqJsonLd = faqs.length
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map((f) => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+      })),
+    }
+  : null;
+---
+
+<BaseLayout title={pageTitle} description={description} ogType="article">
+  <div class="mx-auto max-w-3xl px-6 py-10">
+    <Breadcrumb items={crumbs} />
+    <h1 class="mt-6 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl dark:text-white">
+      {title}
+    </h1>
+    {updated && <p class="mt-2 text-sm text-zinc-400">最后更新:{updated}</p>}
+
+    <!-- 工具 CTA(把学习流量导进工具) -->
+    <a
+      href={`/${toolSlug}`}
+      class="mt-5 flex items-center justify-between gap-3 rounded-xl border border-violet-200 bg-violet-50 px-5 py-4 transition-colors hover:border-violet-300 dark:border-violet-500/20 dark:bg-violet-500/5"
+    >
+      <span class="text-sm text-zinc-700 dark:text-zinc-200">
+        想直接生成?试试 <strong class="text-violet-600 dark:text-violet-400">{toolTitle}</strong> —— 填参数即出结果。
+      </span>
+      <span class="shrink-0 text-sm font-medium text-violet-600 dark:text-violet-400">打开工具 →</span>
+    </a>
+
+    <article class="prose-doc mt-8">
+      <slot />
+    </article>
+
+    {
+      faqs.length > 0 && (
+        <section class="mt-12">
+          <h2 class="text-2xl font-bold text-zinc-900 dark:text-white">常见问题</h2>
+          <div class="mt-4 space-y-3">
+            {faqs.map((f) => (
+              <details class="group rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                <summary class="cursor-pointer list-none font-medium text-zinc-800 dark:text-zinc-100">
+                  <h3 class="inline">{f.q}</h3>
+                </summary>
+                <p class="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    {
+      others.length > 0 && (
+        <section class="mt-12">
+          <h2 class="text-2xl font-bold text-zinc-900 dark:text-white">继续了解 {toolShort}</h2>
+          <div class="mt-4 grid gap-3 sm:grid-cols-2">
+            {others.map((s) => (
+              <a
+                href={`/${toolSlug}/${s.slug}`}
+                class="rounded-xl border border-zinc-200 bg-white p-4 transition-colors hover:border-violet-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-violet-700"
+              >
+                <span class="text-xs text-violet-500">{TYPE_LABEL[s.type]}</span>
+                <span class="mt-1 block font-medium text-zinc-900 dark:text-white">{s.title}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )
+    }
+  </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(articleJsonLd)} />
+  {faqJsonLd && <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />}
+</BaseLayout>

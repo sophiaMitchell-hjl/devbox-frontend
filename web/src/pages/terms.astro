@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+
+const title = '服务条款 | DevBox';
+const description =
+  'DevBox 服务条款:工具按“现状”免费提供,请在使用生成的配置或命令前自行核对。说明使用范围、免责声明与条款变更。';
+const updated = '2026-07-01';
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="mx-auto max-w-3xl px-6 py-10">
+    <Breadcrumb items={[{ name: '首页', href: '/' }, { name: '服务条款' }]} />
+    <h1 class="mt-6 text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">服务条款</h1>
+    <p class="mt-2 text-sm text-zinc-400">最后更新:{updated}</p>
+
+    <article class="prose-doc mt-6">
+      <p>使用 DevBox 即表示你同意以下条款。</p>
+
+      <h2>服务性质</h2>
+      <p>
+        DevBox 免费提供一组在线开发者工具,帮助你生成配置与命令。工具按<strong>"现状"</strong>提供,
+        我们尽力保证正确,但不对结果的绝对准确性或适用性作出保证。
+      </p>
+
+      <h2>使用你自行负责</h2>
+      <p>
+        在将生成的配置、命令或表达式用于生产环境前,请<strong>自行核对并在安全环境中测试</strong>。
+        对于因使用本站生成内容而导致的任何损失(如误删数据、服务中断、配置错误等),我们不承担责任。
+      </p>
+
+      <h2>合理使用</h2>
+      <ul>
+        <li>请勿利用本站从事违法活动或侵犯他人权益。</li>
+        <li>请勿以自动化方式对本站发起可能影响正常服务的高频请求。</li>
+      </ul>
+
+      <h2>知识产权</h2>
+      <p>
+        DevBox 的界面与内容归本站所有;你通过工具生成的配置与命令归你自己所有,可自由使用。
+      </p>
+
+      <h2>条款变更</h2>
+      <p>
+        我们可能不时更新本条款,更新后会修改本页顶部日期。继续使用即表示接受更新后的条款。
+        有疑问请联系 <a href="mailto:siyingli122@gmail.com">siyingli122@gmail.com</a>。
+      </p>
+    </article>
+  </div>
+</BaseLayout>

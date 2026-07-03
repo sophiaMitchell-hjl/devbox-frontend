@@ -1,0 +1,55 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+
+const title = '隐私政策 | DevBox';
+const description =
+  'DevBox 隐私政策:所有工具在浏览器本地运行,不收集、不上传你的输入数据。说明我们如何(不)处理数据与可能使用的匿名统计。';
+const updated = '2026-07-01';
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="mx-auto max-w-3xl px-6 py-10">
+    <Breadcrumb items={[{ name: '首页', href: '/' }, { name: '隐私政策' }]} />
+    <h1 class="mt-6 text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">隐私政策</h1>
+    <p class="mt-2 text-sm text-zinc-400">最后更新:{updated}</p>
+
+    <article class="prose-doc mt-6">
+      <p>
+        DevBox 尊重你的隐私。核心原则:<strong>我们不需要、也不会收集你在工具里输入的内容</strong>。
+      </p>
+
+      <h2>你的输入数据</h2>
+      <p>
+        所有工具(Cron、正则、Nginx、Docker Compose 等)都在<strong>你的浏览器本地运行</strong>。
+        你填写的表达式、配置、命令等<strong>不会被上传到任何服务器</strong>,也不会被我们存储。
+        关闭或刷新页面后,这些数据即消失。
+      </p>
+
+      <h2>账号与 Cookie</h2>
+      <p>
+        DevBox 无需注册、没有账号系统,因此不收集姓名、邮箱等个人身份信息。
+        我们不使用用于广告追踪的 Cookie。
+      </p>
+
+      <h2>匿名统计</h2>
+      <p>
+        为了解哪些工具被使用、改进产品,我们可能使用<strong>隐私友好、不含 Cookie</strong>的匿名访问统计
+        (如 Plausible 或 Cloudflare Web Analytics)。这类统计只汇总页面访问量等聚合数据,
+        <strong>不追踪个人、不采集你的输入内容</strong>。
+      </p>
+
+      <h2>第三方资源</h2>
+      <p>
+        页面可能加载第三方提供的字体等静态资源(如 Google Fonts),这些请求可能被相应服务商记录。
+        除此之外,我们不接入第三方广告或追踪脚本。
+      </p>
+
+      <h2>政策更新</h2>
+      <p>
+        本政策如有调整,会更新本页顶部的日期。继续使用即表示你接受更新后的政策。
+        有疑问请联系 <a href="mailto:siyingli122@gmail.com">siyingli122@gmail.com</a>。
+      </p>
+    </article>
+  </div>
+</BaseLayout>

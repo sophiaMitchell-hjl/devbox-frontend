@@ -1,0 +1,76 @@
+---
+import ToolPageLayout from '../layouts/ToolPageLayout.astro';
+
+const title = '目录树生成器 - 缩进列表转 ASCII 树状图 | DevBox';
+const description =
+  '在线目录树生成器:把用缩进书写的文件/目录列表转成 ├── └── 形式的 ASCII 树状图,适合放进 README。浏览器本地生成,复制即用。';
+const faqs = [
+  {
+    q: '怎么表示层级?',
+    a: '用缩进表示:每两个空格(或一个 Tab)代表下一级。把子项比父项多缩进一层即可,工具会自动画出连接线。',
+  },
+];
+const sample = `my-project
+  src
+    index.ts
+    utils.ts
+  public
+    favicon.svg
+  package.json
+  README.md`;
+---
+
+<ToolPageLayout slug="tree" title={title} description={description} faqs={faqs}>
+  <div class="grid gap-4 md:grid-cols-2">
+    <div>
+      <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">缩进列表(每 2 空格一级)</label>
+      <textarea id="in" class="h-80 w-full rounded-xl border border-zinc-300 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" spellcheck="false">{sample}</textarea>
+    </div>
+    <div>
+      <div class="mb-1 flex items-center justify-between">
+        <label class="text-sm font-medium text-zinc-700 dark:text-zinc-300">树状图</label>
+        <button id="copy" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">复制</button>
+      </div>
+      <pre class="h-80 overflow-auto rounded-xl bg-zinc-900 p-4 font-mono text-sm whitespace-pre-wrap break-words text-zinc-100"><code id="out"></code></pre>
+    </div>
+  </div>
+
+  <script>
+    const inEl = document.getElementById('in') as HTMLTextAreaElement;
+    const out = document.getElementById('out')!;
+
+    function build() {
+      const lines = inEl.value.split('\n').filter((l) => l.trim());
+      const nodes = lines.map((l) => {
+        const indent = (l.match(/^[\t ]*/)?.[0] || '').replace(/\t/g, '  ').length;
+        return { depth: Math.floor(indent / 2), name: l.trim() };
+      });
+      const res: string[] = [];
+      for (let i = 0; i < nodes.length; i++) {
+        const { depth, name } = nodes[i];
+        let last = true;
+        for (let j = i + 1; j < nodes.length; j++) {
+          if (nodes[j].depth < depth) break;
+          if (nodes[j].depth === depth) { last = false; break; }
+        }
+        let prefix = '';
+        for (let k = 0; k < depth; k++) {
+          let ancestorLast = true;
+          for (let j = i + 1; j < nodes.length; j++) {
+            if (nodes[j].depth < k) break;
+            if (nodes[j].depth === k) { ancestorLast = false; break; }
+          }
+          prefix += ancestorLast ? '    ' : '│   ';
+        }
+        res.push(prefix + (depth > 0 ? (last ? '└── ' : '├── ') : '') + name);
+      }
+      out.textContent = res.join('\n');
+    }
+
+    inEl.addEventListener('input', build);
+    document.getElementById('copy')!.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(out.textContent || '');
+    });
+    build();
+  </script>
+</ToolPageLayout>

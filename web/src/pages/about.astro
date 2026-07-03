@@ -1,0 +1,43 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+
+const title = '关于 DevBox - 开发者在线工具箱';
+const description =
+  'DevBox 是一个面向开发者与运维的在线工具箱:填参数即出配置与命令,复制可用,全程浏览器本地计算、免注册。了解我们的理念与联系方式。';
+---
+
+<BaseLayout title={title} description={description}>
+  <div class="mx-auto max-w-3xl px-6 py-10">
+    <Breadcrumb items={[{ name: '首页', href: '/' }, { name: '关于' }]} />
+    <h1 class="mt-6 text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">关于 DevBox</h1>
+
+    <article class="prose-doc mt-6">
+      <p>
+        DevBox 是一个面向开发者与运维的<strong>在线工具箱</strong>。核心理念很简单:
+        <strong>填参数,出配置与命令,复制即用</strong>。Nginx 反代、Docker Compose、Cron 表达式、正则调试……
+        这些日常反复要写、又容易记错的东西,交给工具即时生成。
+      </p>
+
+      <h2>我们在意什么</h2>
+      <ul>
+        <li><strong>即时与确定</strong>:输入即出结果,基于真实解析库,结果可预测、可复现,不像 AI 那样可能"幻觉"。</li>
+        <li><strong>隐私</strong>:所有计算都在你的浏览器本地完成,<strong>不上传任何数据</strong>,内网环境也能用。</li>
+        <li><strong>对小白友好</strong>:每个工具都解释"这是什么、用在开发的哪一步、生成后怎么用",不只给结果。</li>
+        <li><strong>免注册、免费</strong>:打开即用,没有账号墙。</li>
+      </ul>
+
+      <h2>为什么不是直接问 AI?</h2>
+      <p>
+        对于"填参数出配置"这类确定性任务,专用工具通常更快、更准、可反复调参,而且能<strong>反向验证</strong>:
+        把 AI 给你的 cron / 正则 / 配置粘进来,立刻看它到底对不对。我们把工具定位成 AI 的"校验器 + 可视化层",而不是对手。
+      </p>
+
+      <h2>联系我们</h2>
+      <p>
+        建议、报错、想要的新工具,欢迎邮件联系:
+        <a href="mailto:siyingli122@gmail.com">siyingli122@gmail.com</a>。
+      </p>
+    </article>
+  </div>
+</BaseLayout>

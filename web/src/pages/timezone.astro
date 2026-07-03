@@ -1,0 +1,87 @@
+---
+import ToolPageLayout from '../layouts/ToolPageLayout.astro';
+
+const title = '时区转换器 - 在线跨时区时间换算(含夏令时)| DevBox';
+const description =
+  '在线时区转换:输入一个时间,即时换算到北京、东京、伦敦、纽约、洛杉矶等全球时区,自动处理夏令时。浏览器本地计算。';
+const faqs = [
+  {
+    q: '会自动处理夏令时吗?',
+    a: '会。换算基于浏览器的 Intl 时区数据库,像纽约、伦敦这类有夏令时的地区会按日期自动调整偏移。',
+  },
+];
+const zones = [
+  { label: '本地时区', tz: '' },
+  { label: 'UTC', tz: 'UTC' },
+  { label: '北京 / 上海', tz: 'Asia/Shanghai' },
+  { label: '东京', tz: 'Asia/Tokyo' },
+  { label: '伦敦', tz: 'Europe/London' },
+  { label: '巴黎', tz: 'Europe/Paris' },
+  { label: '纽约', tz: 'America/New_York' },
+  { label: '洛杉矶', tz: 'America/Los_Angeles' },
+  { label: '悉尼', tz: 'Australia/Sydney' },
+];
+---
+
+<ToolPageLayout slug="timezone" title={title} description={description} faqs={faqs}>
+  <div class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <div class="mb-2 flex items-center justify-between">
+      <label for="dt" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">时间(按你的本地时区输入)</label>
+      <button id="now" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">填入当前</button>
+    </div>
+    <input id="dt" type="datetime-local" step="1" class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-base text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+
+    <div id="out" class="mt-5 divide-y divide-zinc-100 dark:divide-zinc-800"></div>
+  </div>
+
+  <script>
+    const zones = [
+      { label: '本地时区', tz: '' },
+      { label: 'UTC', tz: 'UTC' },
+      { label: '北京 / 上海', tz: 'Asia/Shanghai' },
+      { label: '东京', tz: 'Asia/Tokyo' },
+      { label: '伦敦', tz: 'Europe/London' },
+      { label: '巴黎', tz: 'Europe/Paris' },
+      { label: '纽约', tz: 'America/New_York' },
+      { label: '洛杉矶', tz: 'America/Los_Angeles' },
+      { label: '悉尼', tz: 'Australia/Sydney' },
+    ];
+    const dt = document.getElementById('dt') as HTMLInputElement;
+    const out = document.getElementById('out')!;
+
+    function fmt(d: Date, tz: string) {
+      const opts: Intl.DateTimeFormatOptions = {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false, weekday: 'short',
+      };
+      if (tz) opts.timeZone = tz;
+      return new Intl.DateTimeFormat('zh-CN', opts).format(d);
+    }
+
+    function render() {
+      if (!dt.value) { out.innerHTML = ''; return; }
+      const d = new Date(dt.value);
+      if (isNaN(d.getTime())) { out.innerHTML = ''; return; }
+      out.innerHTML = zones
+        .map(
+          (z) => `<div class="flex items-center justify-between gap-3 py-2.5">
+            <span class="text-sm text-zinc-500 dark:text-zinc-400">${z.label}</span>
+            <code class="font-mono text-sm text-zinc-800 dark:text-zinc-100">${fmt(d, z.tz)}</code>
+          </div>`
+        )
+        .join('');
+    }
+
+    function fillNow() {
+      const n = new Date();
+      const p = (x: number) => String(x).padStart(2, '0');
+      dt.value = `${n.getFullYear()}-${p(n.getMonth() + 1)}-${p(n.getDate())}T${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
+      render();
+    }
+
+    dt.addEventListener('input', render);
+    document.getElementById('now')!.addEventListener('click', fillNow);
+    fillNow();
+  </script>
+</ToolPageLayout>

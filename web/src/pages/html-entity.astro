@@ -1,0 +1,66 @@
+---
+import ToolPageLayout from '../layouts/ToolPageLayout.astro';
+
+const title = 'HTML 实体编解码 - 在线转义与还原特殊字符 | DevBox';
+const description =
+  '在线 HTML 实体编解码:把 < > & " 等特殊字符转成 HTML 实体,或把实体还原成字符,支持命名与数字实体。浏览器本地处理。';
+const faqs = [
+  {
+    q: '什么时候需要 HTML 实体?',
+    a: '当你要在网页里显示 <、>、& 这些本身有语法含义的字符时,需转义成实体(如 &lt;),否则会被浏览器当成标签解析。',
+  },
+];
+const areaCls =
+  'w-full h-40 rounded-xl border border-zinc-300 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+---
+
+<ToolPageLayout slug="html-entity" title={title} description={description} faqs={faqs}>
+  <div class="mb-4 inline-flex rounded-xl border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-800 dark:bg-zinc-900">
+    <button data-mode="encode" class="seg-btn rounded-lg px-4 py-1.5 text-sm font-medium">编码</button>
+    <button data-mode="decode" class="seg-btn rounded-lg px-4 py-1.5 text-sm font-medium">解码</button>
+  </div>
+
+  <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">输入</label>
+  <textarea id="in" class={areaCls} data-clear-target="out" spellcheck="false" placeholder="示例输入:含 &lt; &gt; &amp; 的文本"></textarea>
+
+  <div class="mt-4 mb-1 flex items-center justify-between">
+    <label class="text-sm font-medium text-zinc-700 dark:text-zinc-300">输出</label>
+    <button id="copy" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">复制</button>
+  </div>
+  <textarea id="out" class={areaCls} readonly placeholder="示例输出:转义后的 HTML 实体"></textarea>
+
+  <script>
+    let mode: 'encode' | 'decode' = 'encode';
+    const inEl = document.getElementById('in') as HTMLTextAreaElement;
+    const outEl = document.getElementById('out') as HTMLTextAreaElement;
+
+    function encode(s: string) {
+      return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+    }
+    function decode(s: string) {
+      const ta = document.createElement('textarea');
+      ta.innerHTML = s;
+      return ta.value;
+    }
+
+    function run() {
+      outEl.value = mode === 'encode' ? encode(inEl.value) : decode(inEl.value);
+    }
+    function setMode(m: 'encode' | 'decode') {
+      mode = m;
+      document.querySelectorAll<HTMLButtonElement>('.seg-btn').forEach((b) => {
+        const active = b.dataset.mode === m;
+        b.classList.toggle('bg-white', active);
+        b.classList.toggle('text-violet-600', active);
+        b.classList.toggle('shadow-sm', active);
+        b.classList.toggle('dark:bg-zinc-800', active);
+        b.classList.toggle('text-zinc-500', !active);
+      });
+      run();
+    }
+    document.querySelectorAll<HTMLButtonElement>('.seg-btn').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode as 'encode' | 'decode')));
+    inEl.addEventListener('input', run);
+    document.getElementById('copy')!.addEventListener('click', async () => { await navigator.clipboard.writeText(outEl.value); });
+    setMode('encode');
+  </script>
+</ToolPageLayout>

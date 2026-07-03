@@ -1,0 +1,49 @@
+---
+import { stages, itemsByStage } from '../lib/roadmap';
+import Chip from './Chip.astro';
+---
+
+<div class="relative mx-auto max-w-4xl">
+  <!-- 竖向中线(移动端在左侧,桌面端居中) -->
+  <div
+    class="absolute top-2 bottom-2 left-4 w-px -translate-x-1/2 bg-gradient-to-b from-indigo-300 via-violet-400 to-fuchsia-300 md:left-1/2 dark:from-indigo-800 dark:via-violet-700 dark:to-fuchsia-900"
+    aria-hidden="true"
+  >
+  </div>
+
+  <ol class="space-y-9 md:space-y-11">
+    {
+      stages.map((stage, i) => {
+        const items = itemsByStage(i + 1);
+        const isLeft = i % 2 === 0;
+        return (
+          <li class="relative md:grid md:grid-cols-2 md:gap-12">
+            {/* 阶段节点 */}
+            <div class="absolute top-1 left-4 z-10 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-sm font-semibold text-white shadow-sm shadow-violet-500/30 md:left-1/2">
+              {stage.n}
+            </div>
+            {/* 阶段内容(左右交错) */}
+            <div
+              class:list={[
+                'pl-12 md:pl-0',
+                isLeft ? 'md:col-start-1 md:pr-12 md:text-right' : 'md:col-start-2 md:pl-12',
+              ]}
+            >
+              <h3 class="text-base font-semibold text-zinc-900 dark:text-white">{stage.title}</h3>
+              <p class="mt-0.5 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                {stage.desc}
+              </p>
+              {items.length > 0 && (
+                <div class:list={['mt-3 flex flex-wrap gap-2', isLeft && 'md:justify-end']}>
+                  {items.map((it) => (
+                    <Chip item={it} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </li>
+        );
+      })
+    }
+  </ol>
+</div>

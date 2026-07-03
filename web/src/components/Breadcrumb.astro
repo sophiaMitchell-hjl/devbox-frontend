@@ -1,0 +1,41 @@
+---
+// 面包屑:可见 DOM 与 BreadcrumbList JSON-LD 同源生成(见《网站结构.md》§7)。
+// 最多 3 级;末项为当前页,不作链接。
+interface Crumb {
+  name: string;
+  href?: string;
+}
+const { items } = Astro.props as { items: Crumb[] };
+const site = Astro.site?.origin ?? '';
+const jsonld = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((c, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: c.name,
+    ...(c.href ? { item: site + c.href } : {}),
+  })),
+};
+---
+
+<nav aria-label="面包屑" class="text-sm text-zinc-500 dark:text-zinc-400">
+  <ol class="flex flex-wrap items-center">
+    {
+      items.map((c, i) => (
+        <li class="crumb">
+          {c.href && i < items.length - 1 ? (
+            <a href={c.href} class="transition-colors hover:text-zinc-900 dark:hover:text-white">
+              {c.name}
+            </a>
+          ) : (
+            <span aria-current="page" class="text-zinc-700 dark:text-zinc-200">
+              {c.name}
+            </span>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+<script type="application/ld+json" set:html={JSON.stringify(jsonld)} />

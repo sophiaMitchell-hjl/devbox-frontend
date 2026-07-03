@@ -1,0 +1,66 @@
+---
+import ToolPageLayout from '../layouts/ToolPageLayout.astro';
+
+const title = 'Hash 生成器 - 在线计算 SHA-256 / SHA-512 | DevBox';
+const description =
+  '在线 Hash 生成:输入文本即时计算 SHA-1、SHA-256、SHA-384、SHA-512 哈希值,基于浏览器原生 Web Crypto 本地计算,数据不外传。';
+const faqs = [
+  {
+    q: '为什么没有 MD5?',
+    a: '浏览器原生的 Web Crypto 出于安全考虑不提供 MD5。本工具用原生接口本地计算,因此只支持 SHA 系列。MD5/SHA 已不适合用于密码存储,请改用 bcrypt/argon2 等专用算法。',
+  },
+];
+const algos = ['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512'];
+---
+
+<ToolPageLayout slug="hash" title={title} description={description} faqs={faqs}>
+  <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">输入文本</label>
+  <textarea id="in" class="h-32 w-full rounded-xl border border-zinc-300 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" placeholder="在此输入要计算哈希的文本…" spellcheck="false"></textarea>
+
+  <div class="mt-5 space-y-3">
+    {
+      algos.map((a) => (
+        <div>
+          <p class="mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">{a}</p>
+          <div class="flex items-center gap-2">
+            <code id={`h-${a}`} class="flex-1 rounded-lg bg-zinc-900 px-3 py-2 font-mono text-xs break-all text-zinc-100" />
+            <button data-algo={a} class="hash-copy shrink-0 text-xs font-medium text-violet-600 dark:text-violet-400">复制</button>
+          </div>
+        </div>
+      ))
+    }
+  </div>
+
+  <script>
+    const inEl = document.getElementById('in') as HTMLTextAreaElement;
+    const algos = ['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512'];
+
+    async function digestHex(algo: string, text: string) {
+      const buf = new TextEncoder().encode(text);
+      const h = await crypto.subtle.digest(algo, buf);
+      return Array.from(new Uint8Array(h))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+
+    async function run() {
+      const text = inEl.value;
+      for (const a of algos) {
+        const el = document.getElementById(`h-${a}`)!;
+        el.textContent = text ? await digestHex(a, text) : '—';
+      }
+    }
+
+    inEl.addEventListener('input', run);
+    document.querySelectorAll<HTMLButtonElement>('.hash-copy').forEach((b) =>
+      b.addEventListener('click', async () => {
+        const el = document.getElementById(`h-${b.dataset.algo}`)!;
+        await navigator.clipboard.writeText(el.textContent || '');
+        const old = b.textContent;
+        b.textContent = '已复制';
+        setTimeout(() => (b.textContent = old), 1200);
+      })
+    );
+    run();
+  </script>
+</ToolPageLayout>

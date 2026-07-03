@@ -1,0 +1,103 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import { getTool } from '../lib/tools';
+import { relatedTools } from '../lib/related';
+
+interface Props {
+  slug: string;
+  title: string; // <title>
+  description: string;
+  faqs?: { q: string; a: string }[];
+  note?: string; // 覆盖底部说明(如需服务器的工具)
+}
+const {
+  slug,
+  title,
+  description,
+  faqs = [],
+  note = '全部在你的浏览器本地计算,不上传任何数据。',
+} = Astro.props;
+const tool = getTool(slug)!;
+const related = relatedTools(slug);
+
+const faqJsonLd = faqs.length
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map((f) => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+      })),
+    }
+  : null;
+---
+
+<BaseLayout title={title} description={description} ogType="article">
+  <div class="mx-auto max-w-3xl px-6 py-10">
+    <Breadcrumb items={[{ name: '首页', href: '/' }, { name: tool.short }]} />
+
+    <header class="mt-6">
+      <h1 class="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl dark:text-white">
+        {tool.title}
+      </h1>
+      <div class="mt-4 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <span class="rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-medium text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
+          {tool.stage}
+        </span>
+        <p class="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+          <strong class="text-zinc-900 dark:text-white">这是什么:</strong>{tool.beginnerIntro}
+        </p>
+        <p class="mt-1.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+          <strong class="text-zinc-900 dark:text-white">什么时候用:</strong>{tool.whenToUse}
+        </p>
+      </div>
+    </header>
+
+    <section class="mt-8">
+      <slot />
+    </section>
+
+    <p class="mt-3 text-center text-xs text-zinc-400">{note}</p>
+
+    {
+      faqs.length > 0 && (
+        <section class="mt-14">
+          <h2 class="text-xl font-semibold text-zinc-900 dark:text-white">常见问题</h2>
+          <div class="mt-4 space-y-3">
+            {faqs.map((f) => (
+              <details class="group rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+                <summary class="cursor-pointer list-none font-medium text-zinc-800 dark:text-zinc-100">
+                  <h3 class="inline">{f.q}</h3>
+                </summary>
+                <p class="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    {
+      related.length > 0 && (
+        <section class="mt-14">
+          <h2 class="text-xl font-semibold text-zinc-900 dark:text-white">相关工具</h2>
+          <div class="mt-4 grid gap-3 sm:grid-cols-3">
+            {related.map((t) => (
+              <a
+                href={`/${t.slug}`}
+                class="rounded-xl border border-zinc-200 bg-white p-4 text-sm transition-colors hover:border-violet-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-violet-700"
+              >
+                <span class="font-medium text-zinc-900 dark:text-white">{t.short}</span>
+                <span class="mt-1 block text-xs text-zinc-500 dark:text-zinc-400">{t.desc}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+      )
+    }
+  </div>
+
+  {faqJsonLd && <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />}
+</BaseLayout>
