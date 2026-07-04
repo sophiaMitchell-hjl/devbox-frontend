@@ -14,6 +14,7 @@ interface Props {
   description: string;
   seoTitle?: string;
   type: string;
+  published?: string;
   updated?: string;
   faqs: { q: string; a: string }[];
   toolSlug: string;
@@ -27,6 +28,7 @@ const {
   description,
   seoTitle,
   type,
+  published,
   updated,
   faqs,
   toolSlug,
@@ -43,11 +45,25 @@ const crumbs = [
 ];
 const others = siblings.filter((s) => s.slug !== slug);
 
+const siteUrl = Astro.site!.href.replace(/\/$/, '');
+const pageUrl = new URL(Astro.url.pathname, Astro.site).href.replace(/\/$/, '');
+const datePublished = published ?? updated;
 const articleJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Article',
   headline: title,
   description,
+  inLanguage: 'zh-CN',
+  mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
+  image: `${siteUrl}/og-default.png`,
+  author: { '@type': 'Organization', name: 'DevBox 团队', url: siteUrl },
+  publisher: {
+    '@type': 'Organization',
+    name: 'DevBox',
+    url: siteUrl,
+    logo: { '@type': 'ImageObject', url: `${siteUrl}/favicon.svg` },
+  },
+  ...(datePublished ? { datePublished } : {}),
   ...(updated ? { dateModified: updated } : {}),
 };
 const faqJsonLd = faqs.length
@@ -69,7 +85,9 @@ const faqJsonLd = faqs.length
     <h1 class="mt-6 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl dark:text-white">
       {title}
     </h1>
-    {updated && <p class="mt-2 text-sm text-zinc-400">最后更新:{updated}</p>}
+    <p class="mt-2 text-sm text-zinc-400">
+      <span>DevBox 团队</span>{updated && <span> · 最后更新 {updated}</span>}
+    </p>
 
     <!-- 工具 CTA(把学习流量导进工具) -->
     <a

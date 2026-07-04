@@ -20,6 +20,24 @@ const categories = CAT_ORDER.map((key) => ({
 const title = 'DevBox - 开发者在线工具箱:配置生成 / 正则 / Cron / 命令构建';
 const description =
   'DevBox 开发者在线工具箱:Nginx/Caddy 配置、Docker Compose、Cron 表达式、正则调试等,填参数即出配置与命令,复制可用,纯浏览器计算、免注册。';
+
+const siteUrl = Astro.site!.href.replace(/\/$/, '');
+const orgJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'DevBox',
+  url: siteUrl,
+  logo: `${siteUrl}/favicon.svg`,
+  description: '面向开发者与运维的在线工具箱,填参数即出配置与命令,全程浏览器本地计算。',
+};
+const siteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'DevBox',
+  url: siteUrl,
+  inLanguage: 'zh-CN',
+  publisher: { '@type': 'Organization', name: 'DevBox', url: siteUrl },
+};
 ---
 
 <BaseLayout title={title} description={description}>
@@ -185,4 +203,7 @@ const description =
       setActive(sections[0].dataset.catSection || null);
     }
   </script>
+
+  <script type="application/ld+json" set:html={JSON.stringify(orgJsonLd)} />
+  <script type="application/ld+json" set:html={JSON.stringify(siteJsonLd)} />
 </BaseLayout>

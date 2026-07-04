@@ -32,6 +32,20 @@ const faqJsonLd = faqs.length
       })),
     }
   : null;
+
+// 工具页天然匹配 WebApplication:纯前端、免费、免注册
+const appJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: tool.title,
+  url: new URL(`/${slug}`, Astro.site).href,
+  description,
+  applicationCategory: 'DeveloperApplication',
+  operatingSystem: 'Any',
+  browserRequirements: 'Requires JavaScript',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'CNY' },
+  publisher: { '@type': 'Organization', name: 'DevBox', url: Astro.site!.href },
+};
 ---
 
 <BaseLayout title={title} description={description} ogType="article">
@@ -99,5 +113,6 @@ const faqJsonLd = faqs.length
     }
   </div>
 
+  <script type="application/ld+json" set:html={JSON.stringify(appJsonLd)} />
   {faqJsonLd && <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />}
 </BaseLayout>

@@ -12,6 +12,7 @@ const articles = defineCollection({
     seoTitle: z.string().optional(), // <title>(缺省用 title + 品牌)
     description: z.string(),
     order: z.number().default(0),
+    published: z.string().optional(), // 首次发布日期(缺省回退到 updated)
     updated: z.string().optional(),
     faqs: z
       .array(z.object({ q: z.string(), a: z.string() }))
