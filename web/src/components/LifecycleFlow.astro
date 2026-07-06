@@ -1,6 +1,9 @@
 ---
-import { stages, itemsByStage } from '../lib/roadmap';
+import { getStages, itemsByStage } from '../lib/roadmap';
 import Chip from './Chip.astro';
+import type { Lang } from '../i18n';
+const { lang } = Astro.props as { lang: Lang };
+const stages = getStages(lang);
 ---
 
 <div class="relative mx-auto max-w-4xl">
@@ -14,7 +17,7 @@ import Chip from './Chip.astro';
   <ol class="space-y-9 md:space-y-11">
     {
       stages.map((stage, i) => {
-        const items = itemsByStage(i + 1);
+        const items = itemsByStage(i + 1, lang);
         const isLeft = i % 2 === 0;
         return (
           <li class="relative md:grid md:grid-cols-2 md:gap-12">

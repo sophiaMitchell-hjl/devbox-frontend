@@ -7,6 +7,7 @@ const articles = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/articles' }),
   schema: z.object({
     tool: z.string(), // 归属工具,如 'cron'
+    lang: z.enum(['zh', 'en']).default('zh'), // 语言;英文文章置于 <tool>/en/ 下
     type: z.enum(['wiki', 'guide', 'examples', 'troubleshooting', 'compare']),
     title: z.string(), // 页面 H1
     seoTitle: z.string().optional(), // <title>(缺省用 title + 品牌)

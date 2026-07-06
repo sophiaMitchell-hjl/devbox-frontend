@@ -3,6 +3,8 @@ import BaseLayout from './BaseLayout.astro';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import { getTool } from '../lib/tools';
 import { relatedTools } from '../lib/related';
+import { getLang, localePath } from '../i18n';
+import { useUI } from '../i18n/ui';
 
 interface Props {
   slug: string;
@@ -11,15 +13,11 @@ interface Props {
   faqs?: { q: string; a: string }[];
   note?: string; // 覆盖底部说明(如需服务器的工具)
 }
-const {
-  slug,
-  title,
-  description,
-  faqs = [],
-  note = '全部在你的浏览器本地计算,不上传任何数据。',
-} = Astro.props;
-const tool = getTool(slug)!;
-const related = relatedTools(slug);
+const lang = getLang(Astro.url);
+const t = useUI(lang);
+const { slug, title, description, faqs = [], note = t('tool.note') } = Astro.props;
+const tool = getTool(slug, lang)!;
+const related = relatedTools(slug, lang);
 
 const faqJsonLd = faqs.length
   ? {
@@ -38,19 +36,22 @@ const appJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
   name: tool.title,
-  url: new URL(`/${slug}`, Astro.site).href,
+  url: new URL(localePath(`/${slug}`, lang), Astro.site).href,
   description,
   applicationCategory: 'DeveloperApplication',
   operatingSystem: 'Any',
   browserRequirements: 'Requires JavaScript',
-  offers: { '@type': 'Offer', price: '0', priceCurrency: 'CNY' },
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
   publisher: { '@type': 'Organization', name: 'DevBox', url: Astro.site!.href },
 };
 ---
 
 <BaseLayout title={title} description={description} ogType="article">
   <div class="mx-auto max-w-3xl px-6 py-10">
-    <Breadcrumb items={[{ name: '首页', href: '/' }, { name: tool.short }]} />
+    <Breadcrumb
+      lang={lang}
+      items={[{ name: t('crumb.home'), href: localePath('/', lang) }, { name: tool.short }]}
+    />
 
     <header class="mt-6">
       <h1 class="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl dark:text-white">
@@ -61,10 +62,10 @@ const appJsonLd = {
           {tool.stage}
         </span>
         <p class="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-          <strong class="text-zinc-900 dark:text-white">这是什么:</strong>{tool.beginnerIntro}
+          <strong class="text-zinc-900 dark:text-white">{t('tool.whatIs')}</strong>{tool.beginnerIntro}
         </p>
         <p class="mt-1.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-          <strong class="text-zinc-900 dark:text-white">什么时候用:</strong>{tool.whenToUse}
+          <strong class="text-zinc-900 dark:text-white">{t('tool.whenUse')}</strong>{tool.whenToUse}
         </p>
       </div>
     </header>
@@ -78,7 +79,7 @@ const appJsonLd = {
     {
       faqs.length > 0 && (
         <section class="mt-14">
-          <h2 class="text-xl font-semibold text-zinc-900 dark:text-white">常见问题</h2>
+          <h2 class="text-xl font-semibold text-zinc-900 dark:text-white">{t('tool.faq')}</h2>
           <div class="mt-4 space-y-3">
             {faqs.map((f) => (
               <details class="group rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
@@ -96,15 +97,15 @@ const appJsonLd = {
     {
       related.length > 0 && (
         <section class="mt-14">
-          <h2 class="text-xl font-semibold text-zinc-900 dark:text-white">相关工具</h2>
+          <h2 class="text-xl font-semibold text-zinc-900 dark:text-white">{t('tool.related')}</h2>
           <div class="mt-4 grid gap-3 sm:grid-cols-3">
-            {related.map((t) => (
+            {related.map((rt) => (
               <a
-                href={`/${t.slug}`}
+                href={localePath(`/${rt.slug}`, lang)}
                 class="rounded-xl border border-zinc-200 bg-white p-4 text-sm transition-colors hover:border-violet-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-violet-700"
               >
-                <span class="font-medium text-zinc-900 dark:text-white">{t.short}</span>
-                <span class="mt-1 block text-xs text-zinc-500 dark:text-zinc-400">{t.desc}</span>
+                <span class="font-medium text-zinc-900 dark:text-white">{rt.short}</span>
+                <span class="mt-1 block text-xs text-zinc-500 dark:text-zinc-400">{rt.desc}</span>
               </a>
             ))}
           </div>

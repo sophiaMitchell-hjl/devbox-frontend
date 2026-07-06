@@ -1,29 +1,99 @@
 ---
+import { useUI } from '../i18n/ui';
+import { localePath, altPath, type Lang } from '../i18n';
+const { lang } = Astro.props as { lang: Lang };
+const t = useUI(lang);
+
 const nav = [
-  { name: '工具', href: '/' },
-  { name: '部署指南', href: '/guide/deploy-to-server' },
-  { name: '关于', href: '/about' },
+  { name: t('nav.tools'), href: localePath('/', lang) },
+  { name: t('nav.guide'), href: localePath('/guide/deploy-to-server', lang) },
+  { name: t('nav.about'), href: localePath('/about', lang) },
 ];
+
+// 语言切换:指向当前页在另一语言下的对应路径
+const zhUrl = altPath(Astro.url, 'zh');
+const enUrl = altPath(Astro.url, 'en');
 ---
 
 <header
   class="sticky top-0 z-50 border-b border-zinc-200/70 bg-white/70 backdrop-blur-xl dark:border-zinc-800/70 dark:bg-zinc-950/70"
 >
   <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-    <a href="/" class="flex items-center gap-2.5 text-lg font-semibold tracking-tight">
+    <a href={localePath('/', lang)} class="flex items-center gap-2.5 text-lg font-semibold tracking-tight">
       <span
         class="inline-block h-6 w-6 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 shadow-sm shadow-violet-500/30"
       ></span>
       <span>Dev<span class="text-gradient">Box</span></span>
     </a>
-    <nav class="flex items-center gap-7 text-sm text-zinc-600 dark:text-zinc-300">
-      {
-        nav.map((item) => (
-          <a href={item.href} class="transition-colors hover:text-zinc-900 dark:hover:text-white">
-            {item.name}
+    <div class="flex items-center gap-5">
+      <nav class="flex items-center gap-6 text-sm text-zinc-600 dark:text-zinc-300">
+        {
+          nav.map((item) => (
+            <a href={item.href} class="transition-colors hover:text-zinc-900 dark:hover:text-white">
+              {item.name}
+            </a>
+          ))
+        }
+      </nav>
+
+      <!-- 语言切换器 -->
+      <div class="relative" id="lang-switch">
+        <button
+          type="button"
+          aria-haspopup="true"
+          aria-expanded="false"
+          class="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-sm text-zinc-600 transition-colors hover:border-zinc-300 hover:text-zinc-900 dark:border-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-white"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="h-4 w-4"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a15 15 0 010 18M12 3a15 15 0 000 18"></path></svg>
+          <span>{lang === 'en' ? 'EN' : '中'}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-3 w-3 opacity-60"><path d="M6 9l6 6 6-6"></path></svg>
+        </button>
+        <div
+          id="lang-menu"
+          class="absolute right-0 mt-1.5 hidden w-32 overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-900"
+        >
+          <a
+            href={zhUrl}
+            data-lang-choice="zh"
+            class:list={[
+              'block px-3.5 py-2 text-sm transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800',
+              lang === 'zh' ? 'font-medium text-violet-600 dark:text-violet-400' : 'text-zinc-600 dark:text-zinc-300',
+            ]}
+          >
+            {t('lang.zh')}
           </a>
-        ))
-      }
-    </nav>
+          <a
+            href={enUrl}
+            data-lang-choice="en"
+            class:list={[
+              'block px-3.5 py-2 text-sm transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800',
+              lang === 'en' ? 'font-medium text-violet-600 dark:text-violet-400' : 'text-zinc-600 dark:text-zinc-300',
+            ]}
+          >
+            {t('lang.en')}
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 </header>
+
+<script>
+  const wrap = document.getElementById('lang-switch');
+  const btn = wrap?.querySelector('button');
+  const menu = document.getElementById('lang-menu');
+  btn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = menu?.classList.toggle('hidden');
+    btn.setAttribute('aria-expanded', String(!open));
+  });
+  document.addEventListener('click', () => menu?.classList.add('hidden'));
+  // 记住用户的明确选择,后续访问不再自动跳转覆盖
+  document.querySelectorAll<HTMLAnchorElement>('[data-lang-choice]').forEach((a) => {
+    a.addEventListener('click', () => {
+      try {
+        localStorage.setItem('devbox-lang', a.dataset.langChoice!);
+      } catch (e) {}
+    });
+  });
+</script>

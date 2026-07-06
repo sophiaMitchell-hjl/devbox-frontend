@@ -1,7 +1,7 @@
 ---
-import type { Item } from '../lib/roadmap';
-const { item } = Astro.props as { item: Item };
-const href = item.href ?? (item.slug ? `/${item.slug}` : undefined);
+import type { ResolvedItem } from '../lib/roadmap';
+const { item } = Astro.props as { item: ResolvedItem };
+const href = item.href;
 const clickable = item.live && href;
 ---
 

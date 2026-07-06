@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import { getLang, htmlLang, stripLang, localePath } from '../i18n';
 
 interface Props {
   title: string;
@@ -10,12 +11,19 @@ interface Props {
   image?: string; // 覆盖默认社交分享图(相对路径或绝对 URL)
 }
 const { title, description, ogType = 'website', image = '/og-default.png' } = Astro.props;
+const lang = getLang(Astro.url);
 const canonical = new URL(Astro.url.pathname, Astro.site).href.replace(/\/$/, '') || Astro.url.href;
 const ogImage = new URL(image, Astro.site).href;
+
+// hreflang 备用链接:同一页面的中英规范 URL
+const basePath = stripLang(Astro.url.pathname);
+const abs = (p: string) => new URL(p, Astro.site).href.replace(/\/$/, '') || Astro.site!.href;
+const zhHref = abs(localePath(basePath, 'zh'));
+const enHref = abs(localePath(basePath, 'en'));
 ---
 
 <!doctype html>
-<html lang="zh-CN">
+<html lang={htmlLang(lang)} data-lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -23,9 +31,34 @@ const ogImage = new URL(image, Astro.site).href;
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="zh-Hans" href={zhHref} />
+    <link rel="alternate" hreflang="en" href={enHref} />
+    <link rel="alternate" hreflang="x-default" href={zhHref} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
+    <!-- Auto-redirect on first visit based on system language (only when no explicit choice; once per session). is:inline runs early in <head> to reduce flash. -->
+    <script is:inline>
+      (function () {
+        try {
+          var p = location.pathname;
+          var cur = p === '/en' || p.indexOf('/en/') === 0 ? 'en' : 'zh';
+          var base = p === '/en' ? '/' : p.indexOf('/en/') === 0 ? p.slice(3) : p;
+          var to = function (lang) {
+            if (lang === 'en') return base === '/' ? '/en' : '/en' + base;
+            return base;
+          };
+          var stored = localStorage.getItem('devbox-lang');
+          var pref = stored || (/^zh\b/i.test(navigator.language || '') ? 'zh' : 'en');
+          if (pref !== cur && !sessionStorage.getItem('devbox-lang-redir')) {
+            sessionStorage.setItem('devbox-lang-redir', '1');
+            location.replace(to(pref) + location.search + location.hash);
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <meta property="og:type" content={ogType} />
+    <meta property="og:locale" content={lang === 'en' ? 'en_US' : 'zh_CN'} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
@@ -46,11 +79,11 @@ const ogImage = new URL(image, Astro.site).href;
     />
   </head>
   <body class="min-h-screen bg-zinc-50 text-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
-    <Header />
+    <Header lang={lang} />
     <main>
       <slot />
     </main>
-    <Footer />
+    <Footer lang={lang} />
 
     <script>
       // 输入框聚焦(点击)后,清除对应输出框的示例占位符
