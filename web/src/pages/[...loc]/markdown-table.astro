@@ -1,0 +1,142 @@
+---
+import ToolPageLayout from '../../layouts/ToolPageLayout.astro';
+import { localePaths, langOfParam } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: 'Markdown 表格生成器 - 可视化填表出 MD 代码 | DevBox',
+    description:
+      '在线 Markdown 表格生成器:可视化填写单元格、设置列对齐,实时生成规整的 Markdown 表格代码,复制即用。适合 README、文档与 GitHub。',
+    faqs: [
+      {
+        q: 'Markdown 表格的对齐怎么控制?',
+        a: '靠分隔行的冒号:左对齐 :---、居中 :---:、右对齐 ---:。本工具会按你选的对齐方式自动生成分隔行。',
+      },
+    ],
+    rowsLabel: '行(含表头)',
+    colsLabel: '列',
+    codeLabel: 'Markdown 代码',
+    copy: '复制',
+  },
+  en: {
+    title: 'Markdown Table Generator - Fill a Grid, Get MD Code | DevBox',
+    description:
+      'Online Markdown table generator: fill in cells visually, set column alignment, and get clean Markdown table code in real time — copy and paste. Great for READMEs, docs and GitHub.',
+    faqs: [
+      {
+        q: 'How is Markdown table alignment controlled?',
+        a: 'By colons in the separator row: left :---, center :---:, right ---:. This tool generates the separator row automatically from the alignment you pick.',
+      },
+    ],
+    rowsLabel: 'Rows (incl. header)',
+    colsLabel: 'Columns',
+    codeLabel: 'Markdown code',
+    copy: 'Copy',
+  },
+}[lang];
+---
+
+<ToolPageLayout slug="markdown-table" title={copy.title} description={copy.description} faqs={copy.faqs}>
+  <div class="mb-4 flex flex-wrap items-center gap-4">
+    <label class="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+      {copy.rowsLabel}
+      <input id="rows" type="number" min="2" max="30" value="3" class="w-16 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+    </label>
+    <label class="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+      {copy.colsLabel}
+      <input id="cols" type="number" min="1" max="12" value="3" class="w-16 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+    </label>
+  </div>
+
+  <div class="overflow-x-auto">
+    <div id="grid" class="inline-block space-y-2"></div>
+  </div>
+
+  <div class="mt-6 flex items-center justify-between">
+    <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.codeLabel}</span>
+    <button id="copy" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">{copy.copy}</button>
+  </div>
+  <pre class="mt-1 rounded-xl bg-zinc-900 p-4 font-mono text-sm whitespace-pre-wrap break-words text-zinc-100"><code id="out"></code></pre>
+
+  <script>
+    const L = document.documentElement.dataset.lang === 'en' ? 'en' : 'zh';
+    const TXT = {
+      left: L === 'en' ? 'Left' : '左对齐',
+      center: L === 'en' ? 'Center' : '居中',
+      right: L === 'en' ? 'Right' : '右对齐',
+      header: (n: number) => (L === 'en' ? `Header ${n}` : `表头${n}`),
+      cell: L === 'en' ? 'Cell' : '单元格',
+    };
+    const rowsEl = document.getElementById('rows') as HTMLInputElement;
+    const colsEl = document.getElementById('cols') as HTMLInputElement;
+    const grid = document.getElementById('grid')!;
+    const out = document.getElementById('out')!;
+
+    let aligns: string[] = [];
+
+    const cellCls =
+      'rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+
+    function buildGrid() {
+      const rows = Math.max(2, Math.min(30, Number(rowsEl.value) || 2));
+      const cols = Math.max(1, Math.min(12, Number(colsEl.value) || 1));
+      // 保留已有对齐
+      aligns = Array.from({ length: cols }, (_, i) => aligns[i] || 'left');
+
+      let html = '';
+      // 对齐选择行
+      html += '<div class="flex gap-2">';
+      for (let c = 0; c < cols; c++) {
+        html += `<select class="align-sel w-32 ${cellCls}" data-c="${c}">
+          <option value="left"${aligns[c] === 'left' ? ' selected' : ''}>${TXT.left}</option>
+          <option value="center"${aligns[c] === 'center' ? ' selected' : ''}>${TXT.center}</option>
+          <option value="right"${aligns[c] === 'right' ? ' selected' : ''}>${TXT.right}</option>
+        </select>`;
+      }
+      html += '</div>';
+      // 单元格
+      for (let r = 0; r < rows; r++) {
+        html += '<div class="flex gap-2">';
+        for (let c = 0; c < cols; c++) {
+          const ph = r === 0 ? TXT.header(c + 1) : TXT.cell;
+          html += `<input class="cell w-32 ${cellCls} ${r === 0 ? 'font-semibold' : ''}" data-r="${r}" data-c="${c}" placeholder="${ph}" />`;
+        }
+        html += '</div>';
+      }
+      grid.innerHTML = html;
+      compute();
+    }
+
+    function compute() {
+      const rows = Math.max(2, Math.min(30, Number(rowsEl.value) || 2));
+      const cols = Math.max(1, Math.min(12, Number(colsEl.value) || 1));
+      const data: string[][] = Array.from({ length: rows }, () => Array(cols).fill(''));
+      grid.querySelectorAll<HTMLInputElement>('.cell').forEach((el) => {
+        data[Number(el.dataset.r)][Number(el.dataset.c)] = el.value.trim() || ' ';
+      });
+      const sep = aligns.map((a) => (a === 'center' ? ':---:' : a === 'right' ? '---:' : ':---')).join(' | ');
+      const lines = [
+        '| ' + data[0].join(' | ') + ' |',
+        '| ' + sep + ' |',
+        ...data.slice(1).map((row) => '| ' + row.join(' | ') + ' |'),
+      ];
+      out.textContent = lines.join('\n');
+    }
+
+    grid.addEventListener('input', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.classList.contains('align-sel')) aligns[Number(t.dataset.c)] = (t as HTMLSelectElement).value;
+      compute();
+    });
+    rowsEl.addEventListener('input', buildGrid);
+    colsEl.addEventListener('input', buildGrid);
+    document.getElementById('copy')!.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(out.textContent || '');
+    });
+
+    buildGrid();
+  </script>
+</ToolPageLayout>

@@ -1,0 +1,109 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import { localePaths, langOfParam, localePath } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: '关于 DevBox - 开发者在线工具箱',
+    description:
+      'DevBox 是一个面向开发者与运维的在线工具箱:填参数即出配置与命令,复制可用,全程浏览器本地计算、免注册。了解我们的理念与联系方式。',
+    home: '首页',
+    crumb: '关于',
+    h1: '关于 DevBox',
+    careTitle: '我们在意什么',
+    care: [
+      '<strong>即时与确定</strong>:输入即出结果,基于真实解析库,结果可预测、可复现,不像 AI 那样可能"幻觉"。',
+      '<strong>隐私</strong>:所有计算都在你的浏览器本地完成,<strong>不上传任何数据</strong>,内网环境也能用。',
+      '<strong>对小白友好</strong>:每个工具都解释"这是什么、用在开发的哪一步、生成后怎么用",不只给结果。',
+      '<strong>免注册、免费</strong>:打开即用,没有账号墙。',
+    ],
+    aiTitle: '为什么不是直接问 AI?',
+    contactTitle: '联系我们',
+  },
+  en: {
+    title: 'About DevBox - Online Developer Toolbox',
+    description:
+      'DevBox is an online toolbox for developers and ops: fill in parameters to get ready-to-copy configs and commands, all computed locally in your browser, no signup. Learn about our philosophy and how to reach us.',
+    home: 'Home',
+    crumb: 'About',
+    h1: 'About DevBox',
+    careTitle: 'What we care about',
+    care: [
+      '<strong>Instant and deterministic</strong>: results appear as you type, built on real parsing libraries, so they are predictable and reproducible — no AI-style "hallucinations".',
+      '<strong>Privacy</strong>: every computation runs locally in your browser, <strong>nothing is uploaded</strong>, so it works even on an internal network.',
+      '<strong>Beginner-friendly</strong>: every tool explains "what this is, which stage of development it fits, and how to use the output" — not just the result.',
+      '<strong>No signup, free</strong>: open it and go, no account wall.',
+    ],
+    aiTitle: 'Why not just ask an AI?',
+    contactTitle: 'Contact us',
+  },
+}[lang];
+---
+
+<BaseLayout title={copy.title} description={copy.description}>
+  <div class="mx-auto max-w-3xl px-6 py-10">
+    <Breadcrumb items={[{ name: copy.home, href: localePath('/', lang) }, { name: copy.crumb }]} />
+    <h1 class="mt-6 text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">{copy.h1}</h1>
+
+    <article class="prose-doc mt-6">
+      {
+        lang === 'en' ? (
+          <p>
+            DevBox is an online <strong>toolbox</strong> for developers and ops. The idea is simple:
+            <strong> fill in parameters, get configs and commands, copy and use</strong>. Nginx reverse
+            proxy, Docker Compose, cron expressions, regex debugging… the everyday things you write over
+            and over and easily get wrong are generated for you instantly.
+          </p>
+        ) : (
+          <p>
+            DevBox 是一个面向开发者与运维的<strong>在线工具箱</strong>。核心理念很简单:
+            <strong>填参数,出配置与命令,复制即用</strong>。Nginx 反代、Docker Compose、Cron 表达式、正则调试……
+            这些日常反复要写、又容易记错的东西,交给工具即时生成。
+          </p>
+        )
+      }
+
+      <h2>{copy.careTitle}</h2>
+      <ul>
+        {copy.care.map((item) => <li set:html={item} />)}
+      </ul>
+
+      <h2>{copy.aiTitle}</h2>
+      {
+        lang === 'en' ? (
+          <p>
+            For deterministic tasks like "fill in parameters, get a config", a dedicated tool is usually
+            faster, more accurate, and easy to tweak repeatedly — and it lets you <strong>verify in
+            reverse</strong>: paste the cron / regex / config an AI gave you and instantly see whether it
+            is actually correct. We position these tools as AI's "validator + visualization layer", not
+            its rival.
+          </p>
+        ) : (
+          <p>
+            对于"填参数出配置"这类确定性任务,专用工具通常更快、更准、可反复调参,而且能<strong>反向验证</strong>:
+            把 AI 给你的 cron / 正则 / 配置粘进来,立刻看它到底对不对。我们把工具定位成 AI 的"校验器 + 可视化层",而不是对手。
+          </p>
+        )
+      }
+
+      <h2>{copy.contactTitle}</h2>
+      {
+        lang === 'en' ? (
+          <p>
+            Suggestions, bug reports, or a new tool you want — email us at
+            <a href="mailto:siyingli122@gmail.com"> siyingli122@gmail.com</a>.
+          </p>
+        ) : (
+          <p>
+            建议、报错、想要的新工具,欢迎邮件联系:
+            <a href="mailto:siyingli122@gmail.com">siyingli122@gmail.com</a>。
+          </p>
+        )
+      }
+    </article>
+  </div>
+</BaseLayout>

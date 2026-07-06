@@ -1,0 +1,140 @@
+---
+import ToolPageLayout from '../../layouts/ToolPageLayout.astro';
+import { localePaths, langOfParam } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: 'Open Graph 预览 - 社交分享卡片预览与标签生成 | DevBox',
+    description:
+      '在线 Open Graph 预览:填写标题、描述、图片等,实时预览网页分享到社交平台的卡片效果,并一键生成 og:/twitter: 标签代码。',
+    faqs: [
+      {
+        q: 'og:image 有什么尺寸建议?',
+        a: '推荐 1200×630(约 1.91:1),大图卡片显示效果最好;图片需可公开访问的绝对 URL。',
+      },
+    ],
+    labelTitle: '标题 og:title',
+    labelDesc: '描述 og:description',
+    labelImg: '图片 og:image',
+    labelUrl: '网址 og:url',
+    labelSite: '站点名 og:site_name',
+    cardPreview: '卡片预览',
+    noImage: '未设置 og:image',
+    tagsCode: '标签代码',
+    copy: '复制',
+    sampleTitle: 'DevBox - 开发者在线工具箱',
+    sampleDesc: '填参数,出配置与命令,复制即用。',
+    sampleUrl: 'https://devbox.nextlink.me',
+  },
+  en: {
+    title: 'Open Graph Preview - Social Share Card Preview & Tag Generator | DevBox',
+    description:
+      'Online Open Graph preview: fill in title, description, image and more to preview how a page looks as a social share card in real time, and generate og:/twitter: tag code in one click.',
+    faqs: [
+      {
+        q: 'What size should og:image be?',
+        a: 'A 1200×630 image (about 1.91:1) is recommended for the best large-card display; the image must be an absolute, publicly accessible URL.',
+      },
+    ],
+    labelTitle: 'Title og:title',
+    labelDesc: 'Description og:description',
+    labelImg: 'Image og:image',
+    labelUrl: 'URL og:url',
+    labelSite: 'Site name og:site_name',
+    cardPreview: 'Card preview',
+    noImage: 'No og:image set',
+    tagsCode: 'Tag code',
+    copy: 'Copy',
+    sampleTitle: 'DevBox - Online Toolbox for Developers',
+    sampleDesc: 'Fill in parameters, get configs and commands, copy and go.',
+    sampleUrl: 'https://devbox.nextlink.me',
+  },
+}[lang];
+
+const inputCls =
+  'w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+---
+
+<ToolPageLayout slug="og" title={copy.title} description={copy.description} faqs={copy.faqs}>
+  <div class="grid gap-6 md:grid-cols-2">
+    <div class="space-y-3">
+      <div><label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.labelTitle}</label><input id="t" type="text" value={copy.sampleTitle} class={inputCls} /></div>
+      <div><label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.labelDesc}</label><textarea id="d" rows="2" class={inputCls}>{copy.sampleDesc}</textarea></div>
+      <div><label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.labelImg}</label><input id="img" type="text" placeholder="https://…/cover.png" class={inputCls} /></div>
+      <div><label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.labelUrl}</label><input id="u" type="text" value={copy.sampleUrl} class={inputCls} /></div>
+      <div><label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.labelSite}</label><input id="s" type="text" value="DevBox" class={inputCls} /></div>
+    </div>
+
+    <div>
+      <p class="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.cardPreview}</p>
+      <div class="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+        <div id="p-img" class="flex h-44 items-center justify-center bg-zinc-100 text-xs text-zinc-400 dark:bg-zinc-800">{copy.noImage}</div>
+        <div class="bg-white p-3 dark:bg-zinc-900">
+          <p id="p-domain" class="text-xs uppercase text-zinc-400"></p>
+          <p id="p-title" class="mt-0.5 truncate font-semibold text-zinc-900 dark:text-white"></p>
+          <p id="p-desc" class="mt-0.5 line-clamp-2 text-sm text-zinc-500 dark:text-zinc-400"></p>
+        </div>
+      </div>
+
+      <div class="mt-4 flex items-center justify-between">
+        <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.tagsCode}</span>
+        <button id="copy" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">{copy.copy}</button>
+      </div>
+      <pre class="mt-1 rounded-xl bg-zinc-900 p-4 font-mono text-xs whitespace-pre-wrap break-words text-zinc-100"><code id="out"></code></pre>
+    </div>
+  </div>
+
+  <script>
+    const L = document.documentElement.dataset.lang === 'en' ? 'en' : 'zh';
+    const TXT = {
+      title: L === 'en' ? '(title)' : '(标题)',
+      desc: L === 'en' ? '(description)' : '(描述)',
+      noImage: L === 'en' ? 'No og:image set' : '未设置 og:image',
+      imgError: L === 'en' ? 'Image failed to load' : '图片无法加载',
+    };
+    const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
+    const pImg = document.getElementById('p-img')!;
+    const out = document.getElementById('out')!;
+
+    function esc(s: string) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function domain(u: string) {
+      try { return new URL(u).hostname; } catch { return u; }
+    }
+
+    function render() {
+      const t = $('t').value, d = $('d').value, img = $('img').value, u = $('u').value, s = $('s').value;
+      document.getElementById('p-title')!.textContent = t || TXT.title;
+      document.getElementById('p-desc')!.textContent = d || TXT.desc;
+      document.getElementById('p-domain')!.textContent = domain(u);
+      if (img) {
+        pImg.innerHTML = `<img src="${esc(img)}" alt="" class="h-full w-full object-cover" onerror="this.parentElement.textContent='${TXT.imgError}'" />`;
+      } else {
+        pImg.textContent = TXT.noImage;
+      }
+      const tags = [
+        `<meta property="og:title" content="${esc(t)}">`,
+        `<meta property="og:description" content="${esc(d)}">`,
+        img ? `<meta property="og:image" content="${esc(img)}">` : '',
+        `<meta property="og:url" content="${esc(u)}">`,
+        `<meta property="og:site_name" content="${esc(s)}">`,
+        `<meta property="og:type" content="website">`,
+        `<meta name="twitter:card" content="summary_large_image">`,
+        `<meta name="twitter:title" content="${esc(t)}">`,
+        `<meta name="twitter:description" content="${esc(d)}">`,
+        img ? `<meta name="twitter:image" content="${esc(img)}">` : '',
+      ].filter(Boolean);
+      out.textContent = tags.join('\n');
+    }
+
+    ['t', 'd', 'img', 'u', 's'].forEach((id) => $(id).addEventListener('input', render));
+    document.getElementById('copy')!.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(out.textContent || '');
+    });
+    render();
+  </script>
+</ToolPageLayout>

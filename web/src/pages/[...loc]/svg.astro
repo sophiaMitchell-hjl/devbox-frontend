@@ -1,0 +1,93 @@
+---
+import ToolPageLayout from '../../layouts/ToolPageLayout.astro';
+import { localePaths, langOfParam } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: 'SVG 压缩 - 在线去注释空白、减小 SVG 体积 | DevBox',
+    description:
+      '在线 SVG 压缩:去除注释、XML 声明与冗余空白,减小 SVG 文件体积,显示压缩前后大小对比。浏览器本地处理,可复制。',
+    inputLabel: '原始 SVG',
+    inputPlaceholder: '示例输入:粘贴 SVG 代码',
+    outputLabel: '压缩后',
+    outputPlaceholder: '示例输出:压缩后的 SVG 代码',
+    copy: '复制',
+    faqs: [
+      {
+        q: '这个压缩是无损的吗?',
+        a: '是。它只移除注释、XML 声明和标签间的多余空白,不改变图形数据,渲染效果不变。若要更激进的路径精简,需专门的 SVGO 处理。',
+      },
+    ],
+  },
+  en: {
+    title: 'SVG Minifier - Strip Comments & Whitespace to Shrink SVGs Online | DevBox',
+    description:
+      'Online SVG minifier: strip comments, the XML declaration, and redundant whitespace to shrink SVG files, showing before/after size. Processed locally in the browser, copy-ready.',
+    inputLabel: 'Original SVG',
+    inputPlaceholder: 'Example input: paste your SVG code',
+    outputLabel: 'Minified',
+    outputPlaceholder: 'Example output: minified SVG code',
+    copy: 'Copy',
+    faqs: [
+      {
+        q: 'Is this minification lossless?',
+        a: 'Yes. It only removes comments, the XML declaration, and extra whitespace between tags — the graphics data is unchanged, so rendering stays identical. For more aggressive path simplification you need dedicated SVGO processing.',
+      },
+    ],
+  },
+}[lang];
+
+const areaCls =
+  'w-full h-72 rounded-xl border border-zinc-300 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+---
+
+<ToolPageLayout slug="svg" title={copy.title} description={copy.description} faqs={copy.faqs}>
+  <div class="grid gap-4 md:grid-cols-2">
+    <div>
+      <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.inputLabel}</label>
+      <textarea id="in" class={areaCls} data-clear-target="out" spellcheck="false" placeholder={copy.inputPlaceholder}></textarea>
+    </div>
+    <div>
+      <div class="mb-1 flex items-center justify-between">
+        <label class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.outputLabel} <span id="stat" class="ml-2 font-mono text-xs text-zinc-400"></span></label>
+        <button id="copy" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">{copy.copy}</button>
+      </div>
+      <textarea id="out" class={areaCls} readonly placeholder={copy.outputPlaceholder}></textarea>
+    </div>
+  </div>
+
+  <script>
+    const inEl = document.getElementById('in') as HTMLTextAreaElement;
+    const outEl = document.getElementById('out') as HTMLTextAreaElement;
+    const stat = document.getElementById('stat')!;
+
+    function minify(svg: string) {
+      return svg
+        .replace(/<!--[\s\S]*?-->/g, '') // comments
+        .replace(/<\?xml[\s\S]*?\?>/g, '') // XML declaration
+        .replace(/<!DOCTYPE[^>]*>/gi, '') // DOCTYPE
+        .replace(/>\s+</g, '><') // whitespace between tags
+        .replace(/\s{2,}/g, ' ') // extra spaces
+        .trim();
+    }
+    const bytes = (s: string) => new TextEncoder().encode(s).length;
+    const fmt = (b: number) => (b < 1024 ? b + ' B' : (b / 1024).toFixed(1) + ' KB');
+
+    function run() {
+      const src = inEl.value;
+      if (!src.trim()) { outEl.value = ''; stat.textContent = ''; return; }
+      const min = minify(src);
+      outEl.value = min;
+      const a = bytes(src), b = bytes(min);
+      const pct = a ? Math.round((1 - b / a) * 100) : 0;
+      stat.textContent = `${fmt(a)} → ${fmt(b)}  ↓${pct}%`;
+    }
+    inEl.addEventListener('input', run);
+    document.getElementById('copy')!.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(outEl.value);
+    });
+  </script>
+</ToolPageLayout>

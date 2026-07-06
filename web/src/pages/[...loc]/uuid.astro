@@ -1,0 +1,97 @@
+---
+import ToolPageLayout from '../../layouts/ToolPageLayout.astro';
+import { localePaths, langOfParam } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: 'UUID 生成器 - 在线批量生成 UUID v4 | DevBox',
+    description:
+      '在线批量生成 UUID(v4),支持大写、去连字符,一键复制。基于浏览器原生 crypto 安全随机,不上传数据。',
+    count: '数量',
+    upper: '大写',
+    nohyphen: '去掉连字符',
+    regen: '重新生成',
+    result: '结果',
+    copyAll: '复制全部',
+    faqs: [
+      {
+        q: 'UUID v4 会重复吗?',
+        a: 'v4 由 122 位随机数生成,重复概率极低(实际可忽略)。本工具使用浏览器 crypto 的安全随机源生成。',
+      },
+    ],
+  },
+  en: {
+    title: 'UUID Generator - Bulk Generate UUID v4 Online | DevBox',
+    description:
+      'Generate UUID (v4) in bulk online, with uppercase and hyphen-free options and one-click copy. Uses the browser-native crypto secure random source — nothing uploaded.',
+    count: 'Count',
+    upper: 'Uppercase',
+    nohyphen: 'Remove hyphens',
+    regen: 'Regenerate',
+    result: 'Result',
+    copyAll: 'Copy all',
+    faqs: [
+      {
+        q: 'Can UUID v4 collide?',
+        a: 'v4 is generated from 122 random bits, so the chance of a collision is vanishingly small (negligible in practice). This tool uses the browser crypto secure random source.',
+      },
+    ],
+  },
+}[lang];
+
+const areaCls =
+  'w-full h-48 rounded-xl border border-zinc-300 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+---
+
+<ToolPageLayout slug="uuid" title={copy.title} description={copy.description} faqs={copy.faqs}>
+  <div class="mb-4 flex flex-wrap items-center gap-4">
+    <label class="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+      {copy.count}
+      <input id="count" type="number" min="1" max="500" value="5" class="w-20 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+    </label>
+    <label class="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+      <input id="upper" type="checkbox" class="h-4 w-4 rounded border-zinc-300 accent-violet-600" /> {copy.upper}
+    </label>
+    <label class="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+      <input id="nohyphen" type="checkbox" class="h-4 w-4 rounded border-zinc-300 accent-violet-600" /> {copy.nohyphen}
+    </label>
+    <button id="gen" type="button" class="rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">
+      {copy.regen}
+    </button>
+  </div>
+
+  <div class="mb-1 flex items-center justify-between">
+    <label class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.result}</label>
+    <button id="copy" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">{copy.copyAll}</button>
+  </div>
+  <textarea id="out" class={areaCls} readonly></textarea>
+
+  <script>
+    const countEl = document.getElementById('count') as HTMLInputElement;
+    const upperEl = document.getElementById('upper') as HTMLInputElement;
+    const noHyphenEl = document.getElementById('nohyphen') as HTMLInputElement;
+    const outEl = document.getElementById('out') as HTMLTextAreaElement;
+
+    function gen() {
+      const n = Math.min(500, Math.max(1, Number(countEl.value) || 1));
+      const list: string[] = [];
+      for (let i = 0; i < n; i++) {
+        let u = crypto.randomUUID();
+        if (upperEl.checked) u = u.toUpperCase();
+        if (noHyphenEl.checked) u = u.replace(/-/g, '');
+        list.push(u);
+      }
+      outEl.value = list.join('\n');
+    }
+
+    [countEl, upperEl, noHyphenEl].forEach((el) => el.addEventListener('input', gen));
+    document.getElementById('gen')!.addEventListener('click', gen);
+    document.getElementById('copy')!.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(outEl.value);
+    });
+    gen();
+  </script>
+</ToolPageLayout>

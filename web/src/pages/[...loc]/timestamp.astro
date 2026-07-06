@@ -1,0 +1,174 @@
+---
+import ToolPageLayout from '../../layouts/ToolPageLayout.astro';
+import { localePaths, langOfParam } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: 'Unix 时间戳转换 - 秒/毫秒与日期时间互转 | DevBox',
+    description:
+      '在线 Unix 时间戳转换:自动识别秒/毫秒,时间戳与日期互转,同时给出本地时区、UTC 与 ISO 格式。开发者调试接口时间必备,浏览器本地计算。',
+    tsToDate: '时间戳 → 日期',
+    fillNow: '填入当前',
+    tsPlaceholder: '如 1720000000',
+    dateToTs: '日期 → 时间戳',
+    faqs: [
+      {
+        q: '时间戳是秒还是毫秒?',
+        a: '两者都有:10 位通常是秒(如 1720000000),13 位是毫秒(如 1720000000000)。本工具会自动识别并按对应单位解析。',
+      },
+      {
+        q: '为什么转换结果和我预期差了几个小时?',
+        a: '多半是时区差异。工具同时给出"本地时区"和"UTC"两种结果,按你需要的时区取用即可。',
+      },
+    ],
+  },
+  en: {
+    title: 'Unix Timestamp Converter - Seconds/Milliseconds and Date Conversion | DevBox',
+    description:
+      'Online Unix timestamp converter: auto-detects seconds/milliseconds, converts between timestamps and dates, and shows local, UTC and ISO formats at once. Essential for debugging API times — computed locally in your browser.',
+    tsToDate: 'Timestamp → Date',
+    fillNow: 'Fill now',
+    tsPlaceholder: 'e.g. 1720000000',
+    dateToTs: 'Date → Timestamp',
+    faqs: [
+      {
+        q: 'Is the timestamp in seconds or milliseconds?',
+        a: 'Both exist: 10 digits is usually seconds (e.g. 1720000000), 13 digits is milliseconds (e.g. 1720000000000). This tool auto-detects and parses each accordingly.',
+      },
+      {
+        q: 'Why is the result off by a few hours from what I expected?',
+        a: 'It is almost always a timezone difference. The tool shows both a "local time" and a "UTC" result — use whichever timezone you need.',
+      },
+    ],
+  },
+}[lang];
+
+const inputCls =
+  'w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-base text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+---
+
+<ToolPageLayout slug="timestamp" title={copy.title} description={copy.description} faqs={copy.faqs}>
+  <div class="grid gap-6 md:grid-cols-2">
+    <!-- 时间戳 -> 日期 -->
+    <div class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <div class="mb-2 flex items-center justify-between">
+        <label for="ts-in" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.tsToDate}</label>
+        <button id="ts-now" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">{copy.fillNow}</button>
+      </div>
+      <input id="ts-in" type="text" inputmode="numeric" placeholder={copy.tsPlaceholder} class={inputCls} />
+      <div id="ts-out" class="mt-4 space-y-2 text-sm"></div>
+    </div>
+
+    <!-- 日期 -> 时间戳 -->
+    <div class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <label for="dt-in" class="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.dateToTs}</label>
+      <input id="dt-in" type="datetime-local" step="1" class={inputCls} />
+      <div id="dt-out" class="mt-4 space-y-2 text-sm"></div>
+    </div>
+  </div>
+
+  <script>
+    const L = document.documentElement.dataset.lang === 'en' ? 'en' : 'zh';
+    const TXT = {
+      copy: L === 'en' ? 'Copy' : '复制',
+      copied: L === 'en' ? 'Copied' : '已复制',
+      localTime: L === 'en' ? 'Local time' : '本地时间',
+      relative: L === 'en' ? 'Relative to now' : '相对现在',
+      seconds: L === 'en' ? 'Seconds (s)' : '秒 (s)',
+      millis: L === 'en' ? 'Milliseconds (ms)' : '毫秒 (ms)',
+      needDigits: L === 'en' ? 'Enter a numeric timestamp' : '请输入纯数字时间戳',
+      invalid: L === 'en' ? 'Invalid timestamp' : '无效的时间戳',
+    };
+    const tsIn = document.getElementById('ts-in') as HTMLInputElement;
+    const tsOut = document.getElementById('ts-out')!;
+    const tsNow = document.getElementById('ts-now')!;
+    const dtIn = document.getElementById('dt-in') as HTMLInputElement;
+    const dtOut = document.getElementById('dt-out')!;
+
+    const esc = (s: string) => s.replace(/"/g, '&quot;');
+    function row(label: string, val: string) {
+      return `<div class="flex items-center justify-between gap-3"><span class="text-zinc-400">${label}</span><span class="flex items-center gap-2 min-w-0"><code class="truncate font-mono text-zinc-800 dark:text-zinc-100">${val}</code><button class="copy-inline shrink-0 text-xs text-violet-500" data-val="${esc(val)}">${TXT.copy}</button></span></div>`;
+    }
+
+    const WEEK_ZH = ['日', '一', '二', '三', '四', '五', '六'];
+    const WEEK_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    function fmt(d: Date) {
+      const p = (n: number) => String(n).padStart(2, '0');
+      const base = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+      return L === 'en' ? `${base} ${WEEK_EN[d.getDay()]}` : `${base} 周${WEEK_ZH[d.getDay()]}`;
+    }
+    function relative(ms: number) {
+      const diff = ms - Date.now();
+      const rtf = new Intl.RelativeTimeFormat(L === 'en' ? 'en' : 'zh-CN', { numeric: 'auto' });
+      const abs = Math.abs(diff);
+      const units: [number, Intl.RelativeTimeFormatUnit][] = [
+        [86400000, 'day'],
+        [3600000, 'hour'],
+        [60000, 'minute'],
+        [1000, 'second'],
+      ];
+      for (const [u, name] of units) {
+        if (abs >= u || name === 'second') return rtf.format(Math.round(diff / u), name);
+      }
+      return '';
+    }
+
+    function renderTs() {
+      const raw = tsIn.value.trim();
+      if (!raw || !/^-?\d+$/.test(raw)) {
+        tsOut.innerHTML = raw ? `<p class="text-red-500">${TXT.needDigits}</p>` : '';
+        return;
+      }
+      let n = Number(raw);
+      const ms = raw.replace('-', '').length >= 13 ? n : n * 1000;
+      const d = new Date(ms);
+      if (isNaN(d.getTime())) {
+        tsOut.innerHTML = `<p class="text-red-500">${TXT.invalid}</p>`;
+        return;
+      }
+      tsOut.innerHTML =
+        row(TXT.localTime, fmt(d)) +
+        row('UTC', d.toUTCString()) +
+        row('ISO 8601', d.toISOString()) +
+        row(TXT.relative, relative(ms));
+    }
+
+    function renderDt() {
+      const v = dtIn.value;
+      if (!v) {
+        dtOut.innerHTML = '';
+        return;
+      }
+      const d = new Date(v);
+      const ms = d.getTime();
+      dtOut.innerHTML =
+        row(TXT.seconds, String(Math.floor(ms / 1000))) +
+        row(TXT.millis, String(ms)) +
+        row('ISO 8601', d.toISOString());
+    }
+
+    tsIn.addEventListener('input', renderTs);
+    dtIn.addEventListener('input', renderDt);
+    tsNow.addEventListener('click', () => {
+      tsIn.value = String(Math.floor(Date.now() / 1000));
+      renderTs();
+    });
+
+    // 复制(事件委托)
+    document.addEventListener('click', async (e) => {
+      const t = (e.target as HTMLElement).closest('.copy-inline') as HTMLElement | null;
+      if (!t) return;
+      await navigator.clipboard.writeText(t.dataset.val!);
+      const old = t.textContent;
+      t.textContent = TXT.copied;
+      setTimeout(() => (t.textContent = old), 1200);
+    });
+
+    // 初始化:当前时间
+    tsIn.value = String(Math.floor(Date.now() / 1000));
+    renderTs();
+  </script>
+</ToolPageLayout>

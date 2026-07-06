@@ -1,0 +1,81 @@
+---
+import ToolPageLayout from '../../layouts/ToolPageLayout.astro';
+import { localePaths, langOfParam } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: 'HTML 转 Markdown - 在线把网页代码转成 MD | DevBox',
+    description:
+      '在线 HTML 转 Markdown:粘贴 HTML 即时转成 Markdown,保留标题、列表、链接、代码块等结构,复制即用。浏览器本地转换。',
+    faqs: [
+      {
+        q: '会保留哪些格式?',
+        a: '标题、加粗/斜体、列表、链接、图片、行内代码与代码块、引用等常见结构都会转换;复杂的表格与内联样式可能需要手工微调。',
+      },
+    ],
+    inputLabel: 'HTML 输入',
+    outputLabel: 'Markdown 输出',
+    copy: '复制',
+    inPlaceholder: '示例输入:<h1>标题</h1><p>正文</p>',
+    outPlaceholder: '示例输出:# 标题',
+  },
+  en: {
+    title: 'HTML to Markdown - Convert Web Code to MD Online | DevBox',
+    description:
+      'Online HTML to Markdown: paste HTML and convert it to Markdown instantly, preserving headings, lists, links, code blocks and more — copy and paste. Converted locally in your browser.',
+    faqs: [
+      {
+        q: 'Which formatting is preserved?',
+        a: 'Common structures like headings, bold/italic, lists, links, images, inline code and code blocks, and blockquotes are converted; complex tables and inline styles may need manual tweaks.',
+      },
+    ],
+    inputLabel: 'HTML input',
+    outputLabel: 'Markdown output',
+    copy: 'Copy',
+    inPlaceholder: 'Example input: <h1>Title</h1><p>Body</p>',
+    outPlaceholder: 'Example output: # Title',
+  },
+}[lang];
+
+const areaCls =
+  'w-full h-80 rounded-xl border border-zinc-300 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+---
+
+<ToolPageLayout slug="html-to-markdown" title={copy.title} description={copy.description} faqs={copy.faqs}>
+  <div class="grid gap-4 md:grid-cols-2">
+    <div>
+      <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.inputLabel}</label>
+      <textarea id="in" class={areaCls} data-clear-target="out" spellcheck="false" placeholder={copy.inPlaceholder}></textarea>
+    </div>
+    <div>
+      <div class="mb-1 flex items-center justify-between">
+        <label class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.outputLabel}</label>
+        <button id="copy" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">{copy.copy}</button>
+      </div>
+      <textarea id="out" class={areaCls} readonly placeholder={copy.outPlaceholder}></textarea>
+    </div>
+  </div>
+
+  <script>
+    import TurndownService from 'turndown';
+    const td = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced', bulletListMarker: '-' });
+    const inEl = document.getElementById('in') as HTMLTextAreaElement;
+    const outEl = document.getElementById('out') as HTMLTextAreaElement;
+
+    function run() {
+      try {
+        outEl.value = td.turndown(inEl.value);
+      } catch {
+        outEl.value = '';
+      }
+    }
+    inEl.addEventListener('input', run);
+    document.getElementById('copy')!.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(outEl.value);
+    });
+    run();
+  </script>
+</ToolPageLayout>

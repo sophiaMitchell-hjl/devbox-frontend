@@ -1,0 +1,101 @@
+---
+import ToolPageLayout from '../../layouts/ToolPageLayout.astro';
+import { localePaths, langOfParam } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: '二维码生成器 - 在线把文本/链接转二维码 | DevBox',
+    description:
+      '在线二维码生成:输入文本或网址即时生成二维码,可调尺寸与容错级别,一键下载 PNG。浏览器本地生成,内容不上传。',
+    contentLabel: '内容(文本或链接)',
+    sizeLabel: '尺寸',
+    eccLabel: '容错',
+    qrAlt: '二维码',
+    download: '下载 PNG',
+    faqs: [
+      {
+        q: '容错级别怎么选?',
+        a: 'L/M/Q/H 依次越高越抗污损(但二维码越密)。一般用 M 即可;若二维码上要叠加 Logo 或可能被遮挡,选 H。',
+      },
+    ],
+  },
+  en: {
+    title: 'QR Code Generator - Turn Text/Links into QR Codes Online | DevBox',
+    description:
+      'Online QR code generator: type text or a URL to instantly create a QR code with adjustable size and error correction, download as PNG in one click. Generated locally in the browser — content is never uploaded.',
+    contentLabel: 'Content (text or link)',
+    sizeLabel: 'Size',
+    eccLabel: 'Error correction',
+    qrAlt: 'QR code',
+    download: 'Download PNG',
+    faqs: [
+      {
+        q: 'How do I choose the error-correction level?',
+        a: 'L/M/Q/H are increasingly resistant to damage (but denser). M is usually fine; choose H if you overlay a logo or the code may be partly obscured.',
+      },
+    ],
+  },
+}[lang];
+---
+
+<ToolPageLayout slug="qrcode" title={copy.title} description={copy.description} faqs={copy.faqs}>
+  <div class="grid gap-6 md:grid-cols-2">
+    <div class="space-y-4">
+      <div>
+        <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.contentLabel}</label>
+        <textarea id="in" class="h-28 w-full rounded-xl border border-zinc-300 bg-zinc-50 p-4 text-sm text-zinc-900 outline-none focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" spellcheck="false">https://devbox.nextlink.me</textarea>
+      </div>
+      <div class="flex gap-4">
+        <label class="text-sm text-zinc-600 dark:text-zinc-300">{copy.sizeLabel}
+          <select id="size" class="ml-1 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
+            <option value="200">200</option>
+            <option value="300" selected>300</option>
+            <option value="400">400</option>
+            <option value="600">600</option>
+          </select>
+        </label>
+        <label class="text-sm text-zinc-600 dark:text-zinc-300">{copy.eccLabel}
+          <select id="ecc" class="ml-1 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-950 dark:text-white">
+            <option value="L">L</option>
+            <option value="M" selected>M</option>
+            <option value="Q">Q</option>
+            <option value="H">H</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="flex flex-col items-center">
+      <div class="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+        <img id="qr" alt={copy.qrAlt} class="h-56 w-56" />
+      </div>
+      <a id="download" class="mt-4 rounded-lg bg-zinc-900 px-5 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900" download="qrcode.png">{copy.download}</a>
+    </div>
+  </div>
+
+  <script>
+    import QRCode from 'qrcode';
+    const inEl = document.getElementById('in') as HTMLTextAreaElement;
+    const sizeEl = document.getElementById('size') as HTMLSelectElement;
+    const eccEl = document.getElementById('ecc') as HTMLSelectElement;
+    const img = document.getElementById('qr') as HTMLImageElement;
+    const dl = document.getElementById('download') as HTMLAnchorElement;
+
+    async function gen() {
+      const text = inEl.value || ' ';
+      try {
+        const url = await QRCode.toDataURL(text, {
+          width: Number(sizeEl.value),
+          errorCorrectionLevel: eccEl.value as 'L' | 'M' | 'Q' | 'H',
+          margin: 2,
+        });
+        img.src = url;
+        dl.href = url;
+      } catch {}
+    }
+    [inEl, sizeEl, eccEl].forEach((el) => el.addEventListener('input', gen));
+    gen();
+  </script>
+</ToolPageLayout>

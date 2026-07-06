@@ -1,0 +1,250 @@
+---
+import ToolPageLayout from '../../layouts/ToolPageLayout.astro';
+import { localePaths, langOfParam } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: 'Nginx 反向代理配置生成器 - 一键生成并切换 Caddy | DevBox',
+    description:
+      '在线 Nginx 配置生成器:填表单即出可用的反向代理 / 静态站点配置,支持 HTTPS、WebSocket、gzip,并可一键切换等价的 Caddy 配置。复制即用,浏览器本地生成。',
+    faqs: [
+      {
+        q: 'proxy_pass 后面要不要加斜杠?',
+        a: '带路径时(如 http://127.0.0.1:3000/api/)加不加斜杠语义不同:不加会把 location 前缀一起传给上游,加了会去掉前缀。本工具默认代理到根,不涉及该差异;如自定义路径请按需调整。',
+      },
+      {
+        q: 'Caddy 为什么配置这么短?',
+        a: 'Caddy 自动申请并续期 HTTPS 证书、自动处理 WebSocket,所以不需要写证书路径和 Upgrade 头。若你怕麻烦证书,Caddy 是更省心的选择。',
+      },
+    ],
+    modeProxy: '反向代理',
+    modeStatic: '静态站点',
+    domain: '域名',
+    upstream: '上游地址(你的应用)',
+    root: '站点根目录',
+    maxBody: '客户端上传上限(留空则不设)',
+    maxBodyPh: '如 50m',
+    https: '启用 HTTPS(含 HTTP 跳转)',
+    ws: 'WebSocket 支持',
+    gzip: '启用 gzip 压缩',
+    copy: '复制',
+    caddyNote: 'Caddy 会自动申请并续期 HTTPS 证书、自动处理 WebSocket,无需额外配置。',
+  },
+  en: {
+    title: 'Nginx Reverse Proxy Config Generator - Generate & Switch to Caddy | DevBox',
+    description:
+      'Online Nginx config generator: fill in a form to get a working reverse-proxy or static-site config with HTTPS, WebSocket and gzip, and switch to the equivalent Caddy config in one click. Copy-ready, generated locally in your browser.',
+    faqs: [
+      {
+        q: 'Do I need a trailing slash after proxy_pass?',
+        a: 'With a path (e.g. http://127.0.0.1:3000/api/), the slash changes the meaning: without it the location prefix is passed to the upstream, with it the prefix is stripped. This tool proxies to root by default, so it is not affected; adjust as needed for custom paths.',
+      },
+      {
+        q: 'Why is the Caddy config so short?',
+        a: 'Caddy automatically obtains and renews HTTPS certificates and handles WebSocket for you, so there is no need to write certificate paths or Upgrade headers. If you would rather not deal with certificates, Caddy is the easier choice.',
+      },
+    ],
+    modeProxy: 'Reverse proxy',
+    modeStatic: 'Static site',
+    domain: 'Domain',
+    upstream: 'Upstream (your app)',
+    root: 'Site root directory',
+    maxBody: 'Client upload limit (leave empty for none)',
+    maxBodyPh: 'e.g. 50m',
+    https: 'Enable HTTPS (with HTTP redirect)',
+    ws: 'WebSocket support',
+    gzip: 'Enable gzip compression',
+    copy: 'Copy',
+    caddyNote: 'Caddy automatically obtains and renews HTTPS certificates and handles WebSocket — no extra config needed.',
+  },
+}[lang];
+
+const inputCls =
+  'w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+---
+
+<ToolPageLayout slug="nginx" title={copy.title} description={copy.description} faqs={copy.faqs}>
+  <div class="grid gap-6 md:grid-cols-2">
+    <!-- form -->
+    <div class="space-y-4">
+      <div class="inline-flex rounded-xl border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-800 dark:bg-zinc-900">
+        <button data-mode="proxy" class="seg-btn rounded-lg px-4 py-1.5 text-sm font-medium">{copy.modeProxy}</button>
+        <button data-mode="static" class="seg-btn rounded-lg px-4 py-1.5 text-sm font-medium">{copy.modeStatic}</button>
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.domain}</label>
+        <input id="domain" type="text" value="example.com" class={inputCls} />
+      </div>
+
+      <div id="field-proxy">
+        <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.upstream}</label>
+        <input id="upstream" type="text" value="http://127.0.0.1:3000" class={inputCls} />
+      </div>
+
+      <div id="field-static" class="hidden">
+        <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.root}</label>
+        <input id="root" type="text" value="/var/www/example" class={inputCls} />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.maxBody}</label>
+        <input id="maxbody" type="text" placeholder={copy.maxBodyPh} class={inputCls} />
+      </div>
+
+      <div class="space-y-2 pt-1">
+        <label class="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+          <input id="https" type="checkbox" checked class="h-4 w-4 rounded border-zinc-300 accent-violet-600" /> {copy.https}
+        </label>
+        <label id="lbl-ws" class="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+          <input id="ws" type="checkbox" class="h-4 w-4 rounded border-zinc-300 accent-violet-600" /> {copy.ws}
+        </label>
+        <label class="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+          <input id="gzip" type="checkbox" checked class="h-4 w-4 rounded border-zinc-300 accent-violet-600" /> {copy.gzip}
+        </label>
+      </div>
+    </div>
+
+    <!-- output -->
+    <div>
+      <div class="mb-2 flex items-center justify-between">
+        <div class="inline-flex rounded-lg border border-zinc-200 bg-zinc-100 p-1 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <button data-fmt="nginx" class="fmt-btn rounded px-3 py-1 font-medium">Nginx</button>
+          <button data-fmt="caddy" class="fmt-btn rounded px-3 py-1 font-medium">Caddy</button>
+        </div>
+        <button id="copy" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">{copy.copy}</button>
+      </div>
+      <pre class="max-h-[75vh] overflow-auto rounded-xl bg-zinc-900 p-4 font-mono text-sm whitespace-pre-wrap break-words text-zinc-100"><code id="out"></code></pre>
+      <p id="caddy-note" class="mt-2 hidden text-xs text-zinc-400">{copy.caddyNote}</p>
+    </div>
+  </div>
+
+  <script>
+    let mode: 'proxy' | 'static' = 'proxy';
+    let fmt: 'nginx' | 'caddy' = 'nginx';
+    const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
+    const out = document.getElementById('out')!;
+    const caddyNote = document.getElementById('caddy-note')!;
+
+    function opts() {
+      return {
+        mode,
+        domain: $('domain').value.trim() || 'example.com',
+        upstream: $('upstream').value.trim() || 'http://127.0.0.1:3000',
+        root: $('root').value.trim() || '/var/www/example',
+        maxBody: $('maxbody').value.trim(),
+        https: $('https').checked,
+        ws: $('ws').checked,
+        gzip: $('gzip').checked,
+      };
+    }
+
+    function serverBody(o: ReturnType<typeof opts>) {
+      const l: string[] = [];
+      if (o.maxBody) l.push(`    client_max_body_size ${o.maxBody};`);
+      if (o.gzip) {
+        l.push('    gzip on;');
+        l.push('    gzip_types text/plain text/css application/json application/javascript application/xml image/svg+xml;');
+      }
+      if (l.length) l.push('');
+      if (o.mode === 'proxy') {
+        l.push('    location / {');
+        l.push(`        proxy_pass ${o.upstream};`);
+        l.push('        proxy_set_header Host $host;');
+        l.push('        proxy_set_header X-Real-IP $remote_addr;');
+        l.push('        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;');
+        l.push('        proxy_set_header X-Forwarded-Proto $scheme;');
+        if (o.ws) {
+          l.push('        proxy_http_version 1.1;');
+          l.push('        proxy_set_header Upgrade $http_upgrade;');
+          l.push('        proxy_set_header Connection "upgrade";');
+        }
+        l.push('    }');
+      } else {
+        l.push(`    root ${o.root};`);
+        l.push('    index index.html;');
+        l.push('    location / {');
+        l.push('        try_files $uri $uri/ /index.html;');
+        l.push('    }');
+      }
+      return l;
+    }
+
+    function genNginx(o: ReturnType<typeof opts>) {
+      const first = o.domain.split(/\s+/)[0];
+      const out: string[] = [];
+      if (o.https) {
+        out.push('server {', '    listen 80;', `    server_name ${o.domain};`, '    return 301 https://$host$request_uri;', '}', '');
+        out.push('server {', '    listen 443 ssl;', '    http2 on;', `    server_name ${o.domain};`, '');
+        out.push(`    ssl_certificate     /etc/letsencrypt/live/${first}/fullchain.pem;`);
+        out.push(`    ssl_certificate_key /etc/letsencrypt/live/${first}/privkey.pem;`, '');
+        out.push(...serverBody(o), '}');
+      } else {
+        out.push('server {', '    listen 80;', `    server_name ${o.domain};`, '');
+        out.push(...serverBody(o), '}');
+      }
+      return out.join('\n');
+    }
+
+    function genCaddy(o: ReturnType<typeof opts>) {
+      const l = [`${o.domain} {`];
+      if (o.gzip) l.push('    encode gzip');
+      if (o.mode === 'proxy') {
+        l.push(`    reverse_proxy ${o.upstream.replace(/^https?:\/\//, '')}`);
+      } else {
+        l.push(`    root * ${o.root}`, '    file_server');
+      }
+      if (o.maxBody) l.push('    request_body {', `        max_size ${o.maxBody}`, '    }');
+      l.push('}');
+      return l.join('\n');
+    }
+
+    function render() {
+      const o = opts();
+      out.textContent = fmt === 'nginx' ? genNginx(o) : genCaddy(o);
+      caddyNote.classList.toggle('hidden', fmt !== 'caddy');
+    }
+
+    function setActive(sel: string, attr: string, val: string) {
+      document.querySelectorAll<HTMLButtonElement>(sel).forEach((b) => {
+        const active = b.dataset[attr] === val;
+        b.classList.toggle('bg-white', active);
+        b.classList.toggle('text-violet-600', active);
+        b.classList.toggle('shadow-sm', active);
+        b.classList.toggle('dark:bg-zinc-800', active);
+        b.classList.toggle('text-zinc-500', !active);
+      });
+    }
+
+    document.querySelectorAll<HTMLButtonElement>('.seg-btn').forEach((b) =>
+      b.addEventListener('click', () => {
+        mode = b.dataset.mode as 'proxy' | 'static';
+        document.getElementById('field-proxy')!.classList.toggle('hidden', mode !== 'proxy');
+        document.getElementById('field-static')!.classList.toggle('hidden', mode !== 'static');
+        document.getElementById('lbl-ws')!.classList.toggle('hidden', mode !== 'proxy');
+        setActive('.seg-btn', 'mode', mode);
+        render();
+      })
+    );
+    document.querySelectorAll<HTMLButtonElement>('.fmt-btn').forEach((b) =>
+      b.addEventListener('click', () => {
+        fmt = b.dataset.fmt as 'nginx' | 'caddy';
+        setActive('.fmt-btn', 'fmt', fmt);
+        render();
+      })
+    );
+    ['domain', 'upstream', 'root', 'maxbody', 'https', 'ws', 'gzip'].forEach((id) =>
+      $(id).addEventListener('input', render)
+    );
+    document.getElementById('copy')!.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(out.textContent || '');
+    });
+
+    setActive('.seg-btn', 'mode', 'proxy');
+    setActive('.fmt-btn', 'fmt', 'nginx');
+    render();
+  </script>
+</ToolPageLayout>

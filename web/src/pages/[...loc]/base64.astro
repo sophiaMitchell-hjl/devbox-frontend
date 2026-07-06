@@ -1,0 +1,133 @@
+---
+import ToolPageLayout from '../../layouts/ToolPageLayout.astro';
+import { localePaths, langOfParam } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: 'Base64 编码 / 解码 - 在线转换,支持中文 | DevBox',
+    description:
+      '在线 Base64 编码与解码工具,正确支持中文(UTF-8),即时双向转换、可复制。浏览器本地处理,不上传数据。',
+    faqs: [
+      {
+        q: 'Base64 编码后为什么变长了?',
+        a: 'Base64 用 4 个字符表示 3 字节数据,体积约增加 33%。它的目的是"能在纯文本环境安全传输",不是压缩。',
+      },
+      {
+        q: '中文能正确编码吗?',
+        a: '可以。本工具先按 UTF-8 把中文转成字节再做 Base64,解码时反向还原,不会出现乱码。',
+      },
+    ],
+    encode: '编码',
+    decode: '解码',
+    inputLabel: '输入',
+    outputLabel: '输出',
+    inputPlaceholder: '示例输入:DevBox',
+    outputPlaceholder: '示例输出:RGV2Qm94',
+  },
+  en: {
+    title: 'Base64 Encode / Decode - Online Converter with Unicode Support | DevBox',
+    description:
+      'Online Base64 encoder and decoder with proper Unicode (UTF-8) support, instant two-way conversion and copy. Processed locally in your browser — nothing is uploaded.',
+    faqs: [
+      {
+        q: 'Why does Base64 make the text longer?',
+        a: 'Base64 uses 4 characters to represent every 3 bytes of data, roughly a 33% size increase. Its purpose is safe transport through plain-text channels, not compression.',
+      },
+      {
+        q: 'Does non-ASCII text encode correctly?',
+        a: 'Yes. This tool first converts text to UTF-8 bytes and then Base64-encodes them, reversing the process on decode, so there is no garbled output.',
+      },
+    ],
+    encode: 'Encode',
+    decode: 'Decode',
+    inputLabel: 'Input',
+    outputLabel: 'Output',
+    inputPlaceholder: 'Example input: DevBox',
+    outputPlaceholder: 'Example output: RGV2Qm94',
+  },
+}[lang];
+
+const areaCls =
+  'w-full h-40 rounded-xl border border-zinc-300 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+---
+
+<ToolPageLayout slug="base64" title={copy.title} description={copy.description} faqs={copy.faqs}>
+  <!-- 模式切换 -->
+  <div class="mb-4 inline-flex rounded-xl border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-800 dark:bg-zinc-900">
+    <button data-mode="encode" class="seg-btn rounded-lg px-4 py-1.5 text-sm font-medium">{copy.encode}</button>
+    <button data-mode="decode" class="seg-btn rounded-lg px-4 py-1.5 text-sm font-medium">{copy.decode}</button>
+  </div>
+
+  <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.inputLabel}</label>
+  <textarea id="in" class={areaCls} data-clear-target="out" placeholder={copy.inputPlaceholder} spellcheck="false"></textarea>
+
+  <div class="mt-4 mb-1 flex items-center justify-between">
+    <label class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.outputLabel}</label>
+    <button id="copy" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">{lang === 'en' ? 'Copy' : '复制'}</button>
+  </div>
+  <textarea id="out" class={areaCls} readonly placeholder={copy.outputPlaceholder}></textarea>
+  <p id="err" class="mt-2 hidden text-sm text-red-500"></p>
+
+  <script>
+    const L = document.documentElement.dataset.lang === 'en' ? 'en' : 'zh';
+    const TXT = {
+      decodeErr: L === 'en' ? 'Decode failed: input is not valid Base64' : '解码失败:输入不是有效的 Base64',
+    };
+    let mode: 'encode' | 'decode' = 'encode';
+    const inEl = document.getElementById('in') as HTMLTextAreaElement;
+    const outEl = document.getElementById('out') as HTMLTextAreaElement;
+    const errEl = document.getElementById('err')!;
+    const segs = document.querySelectorAll<HTMLButtonElement>('.seg-btn');
+
+    function encode(str: string) {
+      const bytes = new TextEncoder().encode(str);
+      let bin = '';
+      bytes.forEach((b) => (bin += String.fromCharCode(b)));
+      return btoa(bin);
+    }
+    function decode(str: string) {
+      const bin = atob(str.trim());
+      const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    }
+
+    function run() {
+      const v = inEl.value;
+      errEl.classList.add('hidden');
+      if (!v) {
+        outEl.value = '';
+        return;
+      }
+      try {
+        outEl.value = mode === 'encode' ? encode(v) : decode(v);
+      } catch {
+        outEl.value = '';
+        errEl.textContent = TXT.decodeErr;
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    function setMode(m: 'encode' | 'decode') {
+      mode = m;
+      segs.forEach((b) => {
+        const active = b.dataset.mode === m;
+        b.classList.toggle('bg-white', active);
+        b.classList.toggle('text-violet-600', active);
+        b.classList.toggle('shadow-sm', active);
+        b.classList.toggle('dark:bg-zinc-800', active);
+        b.classList.toggle('text-zinc-500', !active);
+      });
+      run();
+    }
+
+    segs.forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode as 'encode' | 'decode')));
+    inEl.addEventListener('input', run);
+    document.getElementById('copy')!.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(outEl.value);
+    });
+    setMode('encode');
+  </script>
+</ToolPageLayout>

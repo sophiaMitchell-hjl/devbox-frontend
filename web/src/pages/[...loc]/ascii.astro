@@ -1,0 +1,91 @@
+---
+import ToolPageLayout from '../../layouts/ToolPageLayout.astro';
+import { localePaths, langOfParam } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: 'ASCII 码表 - 可搜索的字符/十进制/十六进制对照 | DevBox',
+    description:
+      '完整可搜索的 ASCII 码表:字符、十进制、十六进制、二进制对照,含控制字符说明。离线可用,浏览器本地渲染。',
+    faqs: [
+      {
+        q: 'ASCII 和 Unicode 什么关系?',
+        a: 'ASCII 是最早的 7 位编码(0–127),Unicode 向下兼容它——前 128 个 Unicode 码点与 ASCII 完全一致。',
+      },
+    ],
+    searchPlaceholder: '搜索:字符 / 十进制 / 十六进制(如 A、65、41)',
+    colChar: '字符',
+    colDec: '十进制',
+    colHex: '十六进制',
+    colBin: '二进制',
+    ctrl: {
+      0: 'NUL 空', 7: 'BEL 响铃', 8: 'BS 退格', 9: 'TAB 制表', 10: 'LF 换行', 13: 'CR 回车', 27: 'ESC 转义', 32: '空格', 127: 'DEL 删除',
+    } as Record<number, string>,
+    ctrlGeneric: '控制符',
+  },
+  en: {
+    title: 'ASCII Table - Searchable Character / Decimal / Hex Reference | DevBox',
+    description:
+      'A complete, searchable ASCII table: character, decimal, hexadecimal and binary side by side, with control-character notes. Works offline, rendered locally in your browser.',
+    faqs: [
+      {
+        q: 'How are ASCII and Unicode related?',
+        a: 'ASCII is the original 7-bit encoding (0–127). Unicode is backward compatible with it — the first 128 Unicode code points are identical to ASCII.',
+      },
+    ],
+    searchPlaceholder: 'Search: character / decimal / hex (e.g. A, 65, 41)',
+    colChar: 'Char',
+    colDec: 'Decimal',
+    colHex: 'Hex',
+    colBin: 'Binary',
+    ctrl: {
+      0: 'NUL null', 7: 'BEL bell', 8: 'BS backspace', 9: 'TAB tab', 10: 'LF line feed', 13: 'CR carriage return', 27: 'ESC escape', 32: 'space', 127: 'DEL delete',
+    } as Record<number, string>,
+    ctrlGeneric: 'control',
+  },
+}[lang];
+
+const rows = Array.from({ length: 128 }, (_, i) => {
+  let ch = copy.ctrl[i];
+  if (!ch) ch = i < 32 ? copy.ctrlGeneric : String.fromCharCode(i);
+  return { dec: i, hex: i.toString(16).toUpperCase().padStart(2, '0'), bin: i.toString(2).padStart(8, '0'), ch };
+});
+---
+
+<ToolPageLayout slug="ascii" title={copy.title} description={copy.description} faqs={copy.faqs}>
+  <input id="q" type="text" placeholder={copy.searchPlaceholder} class="mb-4 w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+
+  <div class="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
+    <table class="w-full text-sm">
+      <thead class="bg-zinc-50 text-left text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
+        <tr><th class="px-3 py-2 font-medium">{copy.colChar}</th><th class="px-3 py-2 font-medium">{copy.colDec}</th><th class="px-3 py-2 font-medium">{copy.colHex}</th><th class="px-3 py-2 font-medium">{copy.colBin}</th></tr>
+      </thead>
+      <tbody id="tb" class="divide-y divide-zinc-100 font-mono dark:divide-zinc-800">
+        {
+          rows.map((r) => (
+            <tr class="ascii-row" data-s={`${r.ch} ${r.dec} ${r.hex}`.toLowerCase()}>
+              <td class="px-3 py-1.5">{r.ch}</td>
+              <td class="px-3 py-1.5 text-violet-600 dark:text-violet-400">{r.dec}</td>
+              <td class="px-3 py-1.5 text-zinc-600 dark:text-zinc-300">0x{r.hex}</td>
+              <td class="px-3 py-1.5 text-zinc-400">{r.bin}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const q = document.getElementById('q') as HTMLInputElement;
+    const rows = Array.from(document.querySelectorAll<HTMLElement>('.ascii-row'));
+    q.addEventListener('input', () => {
+      const s = q.value.trim().toLowerCase();
+      rows.forEach((r) => {
+        r.style.display = !s || (r.dataset.s || '').includes(s) ? '' : 'none';
+      });
+    });
+  </script>
+</ToolPageLayout>

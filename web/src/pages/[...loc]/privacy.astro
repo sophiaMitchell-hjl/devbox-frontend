@@ -1,0 +1,127 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import { localePaths, langOfParam, localePath } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const updated = '2026-07-01';
+
+const copy = {
+  zh: {
+    title: '隐私政策 | DevBox',
+    description:
+      'DevBox 隐私政策:所有工具在浏览器本地运行,不收集、不上传你的输入数据。说明我们如何(不)处理数据与可能使用的匿名统计。',
+    home: '首页',
+    crumb: '隐私政策',
+    h1: '隐私政策',
+    updatedLabel: '最后更新:',
+  },
+  en: {
+    title: 'Privacy Policy | DevBox',
+    description:
+      "DevBox privacy policy: every tool runs locally in your browser; we do not collect or upload your input. Explains how we (do not) handle your data and the privacy-friendly analytics we may use.",
+    home: 'Home',
+    crumb: 'Privacy Policy',
+    h1: 'Privacy Policy',
+    updatedLabel: 'Last updated: ',
+  },
+}[lang];
+---
+
+<BaseLayout title={copy.title} description={copy.description}>
+  <div class="mx-auto max-w-3xl px-6 py-10">
+    <Breadcrumb items={[{ name: copy.home, href: localePath('/', lang) }, { name: copy.crumb }]} />
+    <h1 class="mt-6 text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">{copy.h1}</h1>
+    <p class="mt-2 text-sm text-zinc-400">{copy.updatedLabel}{updated}</p>
+
+    <article class="prose-doc mt-6">
+      {
+        lang === 'en' ? (
+          <>
+            <p>
+              DevBox respects your privacy. The core principle:
+              <strong> we neither need nor collect anything you type into the tools</strong>.
+            </p>
+
+            <h2>Your input data</h2>
+            <p>
+              All tools (cron, regex, Nginx, Docker Compose, etc.) run
+              <strong> locally in your browser</strong>. The expressions, configs, and commands you
+              enter <strong>are never uploaded to any server</strong>, nor stored by us. Once you close
+              or refresh the page, that data is gone.
+            </p>
+
+            <h2>Accounts and cookies</h2>
+            <p>
+              DevBox requires no registration and has no account system, so we do not collect personal
+              identifying information such as your name or email. We do not use cookies for advertising
+              tracking.
+            </p>
+
+            <h2>Anonymous analytics</h2>
+            <p>
+              To understand which tools are used and to improve the product, we may use
+              <strong> privacy-friendly, cookie-free</strong> anonymous visit analytics (such as
+              Plausible or Cloudflare Web Analytics). These only aggregate data like page views and
+              <strong> do not track individuals or capture your input</strong>.
+            </p>
+
+            <h2>Third-party resources</h2>
+            <p>
+              Pages may load static assets provided by third parties, such as fonts (e.g. Google Fonts),
+              and those requests may be logged by the respective provider. Beyond that, we do not
+              integrate any third-party advertising or tracking scripts.
+            </p>
+
+            <h2>Policy updates</h2>
+            <p>
+              If this policy changes, we will update the date at the top of this page. Continued use
+              means you accept the updated policy. Questions? Contact
+              <a href="mailto:siyingli122@gmail.com"> siyingli122@gmail.com</a>.
+            </p>
+          </>
+        ) : (
+          <>
+            <p>
+              DevBox 尊重你的隐私。核心原则:<strong>我们不需要、也不会收集你在工具里输入的内容</strong>。
+            </p>
+
+            <h2>你的输入数据</h2>
+            <p>
+              所有工具(Cron、正则、Nginx、Docker Compose 等)都在<strong>你的浏览器本地运行</strong>。
+              你填写的表达式、配置、命令等<strong>不会被上传到任何服务器</strong>,也不会被我们存储。
+              关闭或刷新页面后,这些数据即消失。
+            </p>
+
+            <h2>账号与 Cookie</h2>
+            <p>
+              DevBox 无需注册、没有账号系统,因此不收集姓名、邮箱等个人身份信息。
+              我们不使用用于广告追踪的 Cookie。
+            </p>
+
+            <h2>匿名统计</h2>
+            <p>
+              为了解哪些工具被使用、改进产品,我们可能使用<strong>隐私友好、不含 Cookie</strong>的匿名访问统计
+              (如 Plausible 或 Cloudflare Web Analytics)。这类统计只汇总页面访问量等聚合数据,
+              <strong>不追踪个人、不采集你的输入内容</strong>。
+            </p>
+
+            <h2>第三方资源</h2>
+            <p>
+              页面可能加载第三方提供的字体等静态资源(如 Google Fonts),这些请求可能被相应服务商记录。
+              除此之外,我们不接入第三方广告或追踪脚本。
+            </p>
+
+            <h2>政策更新</h2>
+            <p>
+              本政策如有调整,会更新本页顶部的日期。继续使用即表示你接受更新后的政策。
+              有疑问请联系 <a href="mailto:siyingli122@gmail.com">siyingli122@gmail.com</a>。
+            </p>
+          </>
+        )
+      }
+    </article>
+  </div>
+</BaseLayout>

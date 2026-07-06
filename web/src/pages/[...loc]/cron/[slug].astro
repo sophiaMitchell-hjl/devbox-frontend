@@ -1,0 +1,49 @@
+---
+import { getCollection, render } from 'astro:content';
+import ArticleLayout from '../../../layouts/ArticleLayout.astro';
+import { getTool } from '../../../lib/tools';
+import { slugOf } from '../../../lib/articles';
+import { langOfParam, type Lang } from '../../../i18n';
+
+const TOOL = 'cron';
+
+export async function getStaticPaths() {
+  const all = await getCollection('articles', (e) => e.data.tool === 'cron');
+  const out = [];
+  for (const loc of [undefined, 'en'] as const) {
+    const lang: Lang = loc === 'en' ? 'en' : 'zh';
+    const entries = all.filter((e) => e.data.lang === lang);
+    const siblings = entries.map((e) => ({
+      slug: slugOf(e.id),
+      title: e.data.title,
+      type: e.data.type,
+    }));
+    for (const entry of entries) {
+      out.push({ params: { loc, slug: slugOf(entry.id) }, props: { entry, siblings } });
+    }
+  }
+  return out;
+}
+
+const { entry, siblings } = Astro.props;
+const lang = langOfParam(Astro.params.loc);
+const { Content } = await render(entry);
+const tool = getTool(TOOL, lang)!;
+---
+
+<ArticleLayout
+  slug={slugOf(entry.id)}
+  title={entry.data.title}
+  description={entry.data.description}
+  seoTitle={entry.data.seoTitle}
+  type={entry.data.type}
+  published={entry.data.published}
+  updated={entry.data.updated}
+  faqs={entry.data.faqs}
+  toolSlug={tool.slug}
+  toolShort={tool.short}
+  toolTitle={tool.title}
+  siblings={siblings}
+>
+  <Content />
+</ArticleLayout>

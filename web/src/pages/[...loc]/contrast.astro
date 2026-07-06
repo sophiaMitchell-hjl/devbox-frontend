@@ -1,0 +1,113 @@
+---
+import ToolPageLayout from '../../layouts/ToolPageLayout.astro';
+import { localePaths, langOfParam } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: '颜色对比度检测 - WCAG 可读性(AA/AAA)| DevBox',
+    description:
+      '在线颜色对比度检测:输入文字色与背景色,计算对比度并按 WCAG 判断是否达到 AA/AAA 标准,实时预览。浏览器本地计算。',
+    fgLabel: '文字色',
+    bgLabel: '背景色',
+    largeSample: '大号文字 Aa',
+    normalSample: '正常大小的示例文字 The quick brown fox.',
+    ratioLabel: '对比度',
+    faqs: [
+      {
+        q: 'AA 和 AAA 是什么标准?',
+        a: 'WCAG 无障碍标准:正常文字对比度 ≥4.5 为 AA、≥7 为 AAA;大号文字(≥18.66px 粗体或 24px)阈值分别为 3 和 4.5。',
+      },
+    ],
+  },
+  en: {
+    title: 'Color Contrast Checker - WCAG Readability (AA/AAA) | DevBox',
+    description:
+      'Online color contrast checker: enter a text and background color to compute the contrast ratio and judge WCAG AA/AAA compliance, with live preview. Computed locally in your browser.',
+    fgLabel: 'Text color',
+    bgLabel: 'Background color',
+    largeSample: 'Large text Aa',
+    normalSample: 'Normal-size sample text. The quick brown fox.',
+    ratioLabel: 'Contrast ratio',
+    faqs: [
+      {
+        q: 'What are the AA and AAA levels?',
+        a: 'WCAG accessibility levels: normal text needs a contrast ratio ≥4.5 for AA and ≥7 for AAA; large text (≥18.66px bold or 24px) uses thresholds of 3 and 4.5 respectively.',
+      },
+    ],
+  },
+}[lang];
+---
+
+<ToolPageLayout slug="contrast" title={copy.title} description={copy.description} faqs={copy.faqs}>
+  <div class="grid gap-6 md:grid-cols-2">
+    <div class="space-y-4">
+      <div class="flex items-center gap-3">
+        <input id="fg" type="color" value="#333333" class="h-11 w-16 cursor-pointer rounded border border-zinc-300 bg-transparent dark:border-zinc-700" />
+        <span class="text-sm text-zinc-600 dark:text-zinc-300">{copy.fgLabel}</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <input id="bg" type="color" value="#ffffff" class="h-11 w-16 cursor-pointer rounded border border-zinc-300 bg-transparent dark:border-zinc-700" />
+        <span class="text-sm text-zinc-600 dark:text-zinc-300">{copy.bgLabel}</span>
+      </div>
+      <div id="preview" class="rounded-xl border border-zinc-200 p-6 dark:border-zinc-800">
+        <p class="text-2xl font-bold">{copy.largeSample}</p>
+        <p class="text-sm">{copy.normalSample}</p>
+      </div>
+    </div>
+    <div>
+      <div class="rounded-2xl border border-zinc-200 bg-white p-6 text-center dark:border-zinc-800 dark:bg-zinc-900">
+        <p class="text-sm text-zinc-400">{copy.ratioLabel}</p>
+        <p id="ratio" class="font-mono text-4xl font-bold text-zinc-900 dark:text-white"></p>
+      </div>
+      <div id="grades" class="mt-4 space-y-2 text-sm"></div>
+    </div>
+  </div>
+
+  <script>
+    const L = document.documentElement.dataset.lang === 'en' ? 'en' : 'zh';
+    const TXT = {
+      pass: L === 'en' ? 'Pass ✓' : '通过 ✓',
+      fail: L === 'en' ? 'Fail ✗' : '不通过 ✗',
+      normalAA: L === 'en' ? 'Normal text AA (≥4.5)' : '正常文字 AA (≥4.5)',
+      normalAAA: L === 'en' ? 'Normal text AAA (≥7)' : '正常文字 AAA (≥7)',
+      largeAA: L === 'en' ? 'Large text AA (≥3)' : '大号文字 AA (≥3)',
+      largeAAA: L === 'en' ? 'Large text AAA (≥4.5)' : '大号文字 AAA (≥4.5)',
+    };
+    const fg = document.getElementById('fg') as HTMLInputElement;
+    const bg = document.getElementById('bg') as HTMLInputElement;
+    const preview = document.getElementById('preview')!;
+    const ratioEl = document.getElementById('ratio')!;
+    const grades = document.getElementById('grades')!;
+
+    function lum(hex: string) {
+      const m = hex.replace('#', '');
+      const c = [0, 2, 4].map((i) => {
+        let v = parseInt(m.slice(i, i + 2), 16) / 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    }
+    function badge(pass: boolean, label: string) {
+      return `<div class="flex items-center justify-between rounded-lg border px-3 py-2 ${pass ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-500/25 dark:bg-emerald-500/5' : 'border-red-200 bg-red-50 dark:border-red-500/25 dark:bg-red-500/5'}"><span class="text-zinc-600 dark:text-zinc-300">${label}</span><span class="${pass ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'} font-medium">${pass ? TXT.pass : TXT.fail}</span></div>`;
+    }
+
+    function run() {
+      const l1 = lum(fg.value), l2 = lum(bg.value);
+      const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+      preview.style.color = fg.value;
+      preview.style.background = bg.value;
+      ratioEl.textContent = ratio.toFixed(2) + ':1';
+      grades.innerHTML =
+        badge(ratio >= 4.5, TXT.normalAA) +
+        badge(ratio >= 7, TXT.normalAAA) +
+        badge(ratio >= 3, TXT.largeAA) +
+        badge(ratio >= 4.5, TXT.largeAAA);
+    }
+    fg.addEventListener('input', run);
+    bg.addEventListener('input', run);
+    run();
+  </script>
+</ToolPageLayout>

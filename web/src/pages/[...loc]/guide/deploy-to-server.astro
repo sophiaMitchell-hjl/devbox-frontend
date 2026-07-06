@@ -1,0 +1,211 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Breadcrumb from '../../../components/Breadcrumb.astro';
+import { localePaths, langOfParam, localePath } from '../../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: '从零把网站部署到服务器:新手完整指南 | DevBox',
+    description:
+      '手把手教新手把一个网站/应用部署到服务器:买服务器、SSH 登录、装 Docker、用 docker-compose 起服务、Nginx 反向代理、配 HTTPS、用 cron 定时运维。每步对应可用的在线工具。',
+    home: '首页',
+    crumb: '部署指南',
+    h1: '从零把网站部署到服务器',
+    lead: [
+      '第一次部署会遇到一连串陌生名词:VPS、SSH、Docker、反向代理、HTTPS……',
+      '这篇按顺序讲清每一步',
+      '是什么、为什么、怎么做',
+      ',并在需要的地方给你能直接用的在线工具。跟着走一遍,你就能把一个网站真正跑在公网上。',
+    ],
+    stepLabel: (n: number, t: string) => `第 ${n} 步:${t}`,
+    tipEmoji: '💡',
+    soonSuffix: '(即将上线)',
+    arrow: '→',
+    faqTitle: '常见问题',
+    faq: [
+      {
+        q: '部署后网站打不开、显示 502 怎么办?',
+        a: '多半是反向代理转发的端口和应用实际监听的端口不一致,或应用没起来。先确认容器在运行(<code class="inline-code">docker compose ps</code>),再检查 Nginx/Caddy 的 upstream 地址是否指向正确端口。',
+      },
+      {
+        q: '一定要买域名吗?',
+        a: '先用 IP + 端口也能访问、验证部署是否成功;但要配 HTTPS、给用户使用,还是需要一个域名。',
+      },
+    ],
+    steps: [
+      {
+        n: 1,
+        title: '准备一台服务器(VPS)',
+        body: '你需要一台 24 小时在线的电脑,也就是 VPS(虚拟服务器)。国内外云厂商都提供,按月付费,新手 1 核 2G 起步即可。买好后你会拿到:一个公网 IP、一个 root 密码(或密钥)。',
+        tip: '先选离你用户近的地区;域名可稍后再买,用 IP 也能先跑通。',
+      },
+      {
+        n: 2,
+        title: '连上服务器(SSH)',
+        body: 'SSH 是远程登录服务器的方式。在自己电脑的终端里执行 ssh root@你的IP,输入密码即可进入服务器命令行。之后所有操作都在这里敲命令。',
+        tip: 'Windows 用自带的 PowerShell 或 Windows Terminal 就能 ssh;更安全的做法是配置密钥登录、关闭密码登录。',
+      },
+      {
+        n: 3,
+        title: '安装运行环境(Docker)',
+        body: 'Docker 把应用和它的依赖打包成"容器",一条命令就能跑起来,避免"在我电脑上好好的"这类环境问题。装好 Docker 和 Docker Compose 后,部署就变成了写一个配置文件。',
+        tip: '官方一键脚本:curl -fsSL https://get.docker.com | sh。',
+      },
+      {
+        n: 4,
+        title: '定义你的服务(docker-compose)',
+        body: '用一个 docker-compose.yml 文件描述你要跑哪些服务(网站、数据库、缓存…),然后 docker compose up -d 一次性全部启动。这是现在最主流的部署方式。',
+        tool: { label: '用 Docker Compose 生成器', slug: 'docker-compose', live: true },
+      },
+      {
+        n: 5,
+        title: '让外网能访问(反向代理)',
+        body: '你的应用可能跑在服务器的某个端口(如 3000),但用户要用域名访问。反向代理(Nginx 或 Caddy)负责把 域名 的请求转发给这个端口,还能同时托管多个站点。',
+        tool: { label: '用 Nginx 配置生成器', slug: 'nginx', live: true },
+      },
+      {
+        n: 6,
+        title: '加上 HTTPS(证书)',
+        body: 'HTTPS 就是地址栏的"小绿锁",现在几乎是必需。用 Let’s Encrypt 免费证书即可;如果用 Caddy,它会自动申请和续期证书,几乎零配置。',
+        tip: 'Nginx 可配合 certbot 自动续期;Caddy 则开箱即用 HTTPS。',
+      },
+      {
+        n: 7,
+        title: '自动化运维(cron 定时任务)',
+        body: '上线只是开始。定时备份数据库、定时清理日志、定时跑脚本——这些都交给 cron。你只要写一条 cron 表达式描述"什么时候执行",再加上要跑的命令。',
+        tool: { label: '用 Cron 表达式生成器', slug: 'cron', live: true },
+      },
+    ],
+  },
+  en: {
+    title: 'Deploy a website to a server from scratch: a complete beginner guide | DevBox',
+    description:
+      'A step-by-step guide for beginners to deploy a website/app to a server: buy a server, log in with SSH, install Docker, start services with docker-compose, set up an Nginx reverse proxy, enable HTTPS, and automate ops with cron. Each step links to a ready-to-use online tool.',
+    home: 'Home',
+    crumb: 'Deploy Guide',
+    h1: 'Deploy a website to a server from scratch',
+    lead: [
+      'Your first deploy throws a wall of unfamiliar terms at you: VPS, SSH, Docker, reverse proxy, HTTPS…',
+      'This walks through each step in order, explaining ',
+      'what it is, why, and how to do it',
+      ', with a ready-to-use online tool wherever you need one. Follow it through once and you will have a website actually running on the public internet.',
+    ],
+    stepLabel: (n: number, t: string) => `Step ${n}: ${t}`,
+    tipEmoji: '💡',
+    soonSuffix: ' (coming soon)',
+    arrow: '→',
+    faqTitle: 'FAQ',
+    faq: [
+      {
+        q: 'My site will not load and shows a 502 after deploying — what do I do?',
+        a: 'Most likely the port the reverse proxy forwards to does not match the port the app actually listens on, or the app is not running. First confirm the container is running (<code class="inline-code">docker compose ps</code>), then check whether the Nginx/Caddy upstream address points to the correct port.',
+      },
+      {
+        q: 'Do I have to buy a domain?',
+        a: 'You can access and verify the deploy with just an IP + port first; but to enable HTTPS and serve real users, you still need a domain.',
+      },
+    ],
+    steps: [
+      {
+        n: 1,
+        title: 'Get a server (VPS)',
+        body: "You need a computer that is online 24/7 — a VPS (virtual private server). Cloud providers everywhere offer them on a monthly plan; 1 vCPU and 2 GB RAM is plenty to start. Once you buy one you get: a public IP and a root password (or key).",
+        tip: 'Pick a region close to your users first; you can buy a domain later — an IP is enough to get things working.',
+      },
+      {
+        n: 2,
+        title: 'Connect to the server (SSH)',
+        body: 'SSH is how you log in to a server remotely. In a terminal on your own computer, run ssh root@your-IP and enter the password to reach the server command line. Everything from here on is typed here.',
+        tip: 'On Windows the built-in PowerShell or Windows Terminal can ssh; a more secure approach is to set up key-based login and disable password login.',
+      },
+      {
+        n: 3,
+        title: 'Install the runtime (Docker)',
+        body: 'Docker packages an app and its dependencies into a "container" that runs with a single command, avoiding "it works on my machine" environment problems. Once Docker and Docker Compose are installed, deploying becomes a matter of writing one config file.',
+        tip: 'Official one-line script: curl -fsSL https://get.docker.com | sh.',
+      },
+      {
+        n: 4,
+        title: 'Define your services (docker-compose)',
+        body: 'Use a docker-compose.yml file to describe which services you want to run (website, database, cache…), then docker compose up -d to start them all at once. This is the most common way to deploy today.',
+        tool: { label: 'Use the Docker Compose generator', slug: 'docker-compose', live: true },
+      },
+      {
+        n: 5,
+        title: 'Make it reachable from the internet (reverse proxy)',
+        body: 'Your app may run on some port of the server (say 3000), but users access it by domain. A reverse proxy (Nginx or Caddy) forwards requests for the domain to that port, and can host multiple sites at the same time.',
+        tool: { label: 'Use the Nginx config generator', slug: 'nginx', live: true },
+      },
+      {
+        n: 6,
+        title: 'Add HTTPS (certificates)',
+        body: 'HTTPS is the "little green lock" in the address bar and is now practically required. A free Let’s Encrypt certificate works fine; if you use Caddy, it requests and renews certificates automatically with almost zero config.',
+        tip: 'Nginx can auto-renew with certbot; Caddy provides HTTPS out of the box.',
+      },
+      {
+        n: 7,
+        title: 'Automate ops (cron scheduled jobs)',
+        body: 'Going live is only the beginning. Scheduled database backups, log cleanup, running scripts on a timer — leave all of that to cron. You just write a cron expression describing "when to run", plus the command to run.',
+        tool: { label: 'Use the Cron expression generator', slug: 'cron', live: true },
+      },
+    ],
+  },
+}[lang];
+---
+
+<BaseLayout title={copy.title} description={copy.description} ogType="article">
+  <div class="mx-auto max-w-3xl px-6 py-10">
+    <Breadcrumb items={[{ name: copy.home, href: localePath('/', lang) }, { name: copy.crumb }]} />
+    <h1 class="mt-6 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl dark:text-white">
+      {copy.h1}
+    </h1>
+    <p class="mt-4 text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
+      {copy.lead[0]}
+      {copy.lead[1]}
+      <strong class="text-zinc-800 dark:text-zinc-200">{copy.lead[2]}</strong>
+      {copy.lead[3]}
+    </p>
+
+    <article class="prose-doc mt-8">
+      {
+        copy.steps.map((s) => (
+          <section>
+            <h2>{copy.stepLabel(s.n, s.title)}</h2>
+            <p>{s.body}</p>
+            {s.tip && (
+              <p class="!my-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/5 dark:text-amber-300">
+                {copy.tipEmoji} {s.tip}
+              </p>
+            )}
+            {s.tool &&
+              (s.tool.live ? (
+                <a
+                  href={localePath(`/${s.tool.slug}`, lang)}
+                  class="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white! no-underline! transition-colors hover:bg-violet-700"
+                >
+                  {s.tool.label} {copy.arrow}
+                </a>
+              ) : (
+                <span class="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-300 px-4 py-2 text-sm text-zinc-400 dark:border-zinc-700">
+                  {s.tool.label}{copy.soonSuffix}
+                </span>
+              ))}
+          </section>
+        ))
+      }
+
+      <h2>{copy.faqTitle}</h2>
+      {
+        copy.faq.map((f) => (
+          <>
+            <h3>{f.q}</h3>
+            <p set:html={f.a} />
+          </>
+        ))
+      }
+    </article>
+  </div>
+</BaseLayout>

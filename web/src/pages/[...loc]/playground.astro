@@ -1,0 +1,88 @@
+---
+import ToolPageLayout from '../../layouts/ToolPageLayout.astro';
+import { localePaths, langOfParam } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: '代码演练场 - 在线运行 HTML/CSS/JS | DevBox',
+    description:
+      '在线前端代码演练场:编写 HTML、CSS、JavaScript,右侧沙箱实时预览效果。适合快速试样式、做最小复现。代码在隔离沙箱运行,不上传。',
+    faqs: [
+      {
+        q: '代码会被上传或保存吗?',
+        a: '不会。代码只在你浏览器的沙箱 iframe 里运行,不上传服务器,刷新即清空。',
+      },
+    ],
+    previewLabel: '预览(沙箱)',
+    previewTitle: '预览',
+    htmlDefault: '<h1>Hello DevBox</h1>\n<button id="btn">点我</button>',
+    jsDefault: "document.getElementById('btn').onclick = () => alert('运行成功!');",
+  },
+  en: {
+    title: 'Code Playground - Run HTML/CSS/JS Online | DevBox',
+    description:
+      'Online frontend code playground: write HTML, CSS and JavaScript and preview the result live in a sandbox on the right. Great for quickly trying styles or building a minimal repro. Code runs in an isolated sandbox and is never uploaded.',
+    faqs: [
+      {
+        q: 'Is my code uploaded or saved?',
+        a: "No. Your code only runs inside a sandboxed iframe in your browser — it's never uploaded to a server and is cleared on refresh.",
+      },
+    ],
+    previewLabel: 'Preview (sandbox)',
+    previewTitle: 'Preview',
+    htmlDefault: '<h1>Hello DevBox</h1>\n<button id="btn">Click me</button>',
+    jsDefault: "document.getElementById('btn').onclick = () => alert('It works!');",
+  },
+}[lang];
+
+const htmlDefault = copy.htmlDefault;
+const cssDefault = 'body{font-family:sans-serif;padding:2rem}\nh1{color:#6366f1}';
+const jsDefault = copy.jsDefault;
+const paneCls =
+  'h-40 w-full rounded-lg border border-zinc-300 bg-zinc-50 p-3 font-mono text-xs text-zinc-900 outline-none focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+---
+
+<ToolPageLayout slug="playground" title={copy.title} description={copy.description} faqs={copy.faqs}>
+  <div class="grid gap-4 lg:grid-cols-2">
+    <div class="space-y-3">
+      <div>
+        <label class="mb-1 block text-xs font-medium text-zinc-500">HTML</label>
+        <textarea id="html" class={paneCls} spellcheck="false">{htmlDefault}</textarea>
+      </div>
+      <div>
+        <label class="mb-1 block text-xs font-medium text-zinc-500">CSS</label>
+        <textarea id="css" class={paneCls} spellcheck="false">{cssDefault}</textarea>
+      </div>
+      <div>
+        <label class="mb-1 block text-xs font-medium text-zinc-500">JavaScript</label>
+        <textarea id="js" class={paneCls} spellcheck="false">{jsDefault}</textarea>
+      </div>
+    </div>
+    <div>
+      <label class="mb-1 block text-xs font-medium text-zinc-500">{copy.previewLabel}</label>
+      <iframe id="preview" class="h-[33rem] w-full rounded-lg border border-zinc-200 bg-white dark:border-zinc-800" sandbox="allow-scripts" title={copy.previewTitle}></iframe>
+    </div>
+  </div>
+
+  <script>
+    const html = document.getElementById('html') as HTMLTextAreaElement;
+    const css = document.getElementById('css') as HTMLTextAreaElement;
+    const js = document.getElementById('js') as HTMLTextAreaElement;
+    const frame = document.getElementById('preview') as HTMLIFrameElement;
+    let timer: ReturnType<typeof setTimeout>;
+
+    function run() {
+      const doc = `<!doctype html><html><head><style>${css.value}</style></head><body>${html.value}<script>${js.value}<\/script></body></html>`;
+      frame.srcdoc = doc;
+    }
+    function schedule() {
+      clearTimeout(timer);
+      timer = setTimeout(run, 300);
+    }
+    [html, css, js].forEach((el) => el.addEventListener('input', schedule));
+    run();
+  </script>
+</ToolPageLayout>

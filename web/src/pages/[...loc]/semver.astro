@@ -1,0 +1,140 @@
+---
+import ToolPageLayout from '../../layouts/ToolPageLayout.astro';
+import { localePaths, langOfParam } from '../../i18n';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: 'Semver 版本工具 - 校验/范围判断/比较语义化版本 | DevBox',
+    description:
+      '在线 semver 工具:校验语义化版本是否合法、判断版本是否满足 ^ ~ 等范围、解析并比较两个版本号。基于官方 semver 库,浏览器本地计算。',
+    versionLabel: '版本号',
+    rangeLabel: '范围(可选)',
+    compareTitle: '比较两个版本',
+    faqs: [
+      {
+        q: '^1.2.3 和 ~1.2.3 有什么区别?',
+        a: '^1.2.3 允许升到 <2.0.0(不改主版本);~1.2.3 只允许升到 <1.3.0(不改次版本)。可在上面的范围框里实测各版本是否满足。',
+      },
+    ],
+  },
+  en: {
+    title: 'Semver Version Tool - Validate / Range Check / Compare Versions | DevBox',
+    description:
+      'Online semver tool: validate whether a semantic version is valid, test whether a version satisfies ranges like ^ and ~, and parse and compare two version numbers. Powered by the official semver library, computed locally in your browser.',
+    versionLabel: 'Version',
+    rangeLabel: 'Range (optional)',
+    compareTitle: 'Compare two versions',
+    faqs: [
+      {
+        q: 'What is the difference between ^1.2.3 and ~1.2.3?',
+        a: '^1.2.3 allows upgrades up to <2.0.0 (no major bump); ~1.2.3 only allows up to <1.3.0 (no minor bump). Test which versions satisfy a range in the range box above.',
+      },
+    ],
+  },
+}[lang];
+
+const inputCls =
+  'w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+---
+
+<ToolPageLayout slug="semver" title={copy.title} description={copy.description} faqs={copy.faqs}>
+  <div class="space-y-6">
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.versionLabel}</label>
+        <input id="ver" type="text" value="1.4.2" class={inputCls} />
+      </div>
+      <div>
+        <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.rangeLabel}</label>
+        <input id="range" type="text" value="^1.2.0" class={inputCls} />
+      </div>
+    </div>
+    <div id="out1" class="space-y-2 text-sm"></div>
+
+    <hr class="border-zinc-200 dark:border-zinc-800" />
+
+    <div>
+      <p class="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.compareTitle}</p>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <input id="v1" type="text" value="1.4.2" class={inputCls} />
+        <input id="v2" type="text" value="1.10.0" class={inputCls} />
+      </div>
+      <p id="cmp" class="mt-3 text-sm"></p>
+    </div>
+  </div>
+
+  <script>
+    import semver from 'semver';
+
+    const L = document.documentElement.dataset.lang === 'en' ? 'en' : 'zh';
+    const TXT = {
+      valid: L === 'en' ? 'Valid' : '是否合法',
+      isValid: L === 'en' ? 'valid ✓' : '合法 ✓',
+      invalid: L === 'en' ? 'invalid ✗' : '不合法 ✗',
+      mmp: L === 'en' ? 'major.minor.patch' : '主.次.修订',
+      prerelease: L === 'en' ? 'Prerelease' : '预发布',
+      satisfies: (r: string) => (L === 'en' ? `Satisfies ${r}` : `满足 ${r}`),
+      rangeInvalid: L === 'en' ? 'invalid range' : '范围无效',
+      yes: L === 'en' ? 'yes ✓' : '满足 ✓',
+      noSat: L === 'en' ? 'no ✗' : '不满足 ✗',
+      needTwo: L === 'en' ? 'Enter two valid version numbers' : '请输入两个合法版本号',
+      equals: L === 'en' ? 'equals' : '等于',
+      lessThan: L === 'en' ? 'is less than' : '小于',
+      greaterThan: L === 'en' ? 'is greater than' : '大于',
+    };
+
+    const $ = (id: string) => document.getElementById(id) as HTMLInputElement;
+    const out1 = document.getElementById('out1')!;
+    const cmp = document.getElementById('cmp')!;
+
+    const ok = (t: string) => `<span class="text-emerald-600 dark:text-emerald-400">${t}</span>`;
+    const no = (t: string) => `<span class="text-red-500">${t}</span>`;
+    function row(label: string, val: string) {
+      return `<div class="flex items-center justify-between gap-3"><span class="text-zinc-400">${label}</span><span class="font-mono">${val}</span></div>`;
+    }
+
+    function run1() {
+      const v = $('ver').value.trim();
+      const range = $('range').value.trim();
+      const valid = semver.valid(v);
+      const parsed = semver.parse(v);
+      let html = row(TXT.valid, valid ? ok(TXT.isValid) : no(TXT.invalid));
+      if (parsed) {
+        html += row(TXT.mmp, `${parsed.major}.${parsed.minor}.${parsed.patch}`);
+        if (parsed.prerelease.length) html += row(TXT.prerelease, parsed.prerelease.join('.'));
+      }
+      if (range) {
+        const valifiedRange = semver.validRange(range);
+        if (!valifiedRange) html += row(TXT.satisfies(range), no(TXT.rangeInvalid));
+        else html += row(TXT.satisfies(range), valid && semver.satisfies(v, range) ? ok(TXT.yes) : no(TXT.noSat));
+      }
+      out1.innerHTML = html;
+    }
+
+    function runCmp() {
+      const a = $('v1').value.trim();
+      const b = $('v2').value.trim();
+      if (!semver.valid(a) || !semver.valid(b)) {
+        cmp.className = 'mt-3 text-sm text-red-500';
+        cmp.textContent = TXT.needTwo;
+        return;
+      }
+      const c = semver.compare(a, b);
+      cmp.className = 'mt-3 text-sm text-zinc-700 dark:text-zinc-200';
+      cmp.innerHTML =
+        c === 0
+          ? `<span class="font-mono">${a}</span> ${TXT.equals} <span class="font-mono">${b}</span>`
+          : c < 0
+            ? `<span class="font-mono">${a}</span> ${TXT.lessThan} <span class="font-mono">${b}</span>`
+            : `<span class="font-mono">${a}</span> ${TXT.greaterThan} <span class="font-mono">${b}</span>`;
+    }
+
+    ['ver', 'range'].forEach((id) => $(id).addEventListener('input', run1));
+    ['v1', 'v2'].forEach((id) => $(id).addEventListener('input', runCmp));
+    run1();
+    runCmp();
+  </script>
+</ToolPageLayout>
