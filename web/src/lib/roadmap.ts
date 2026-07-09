@@ -63,6 +63,7 @@ export const catalog: Item[] = [
   { name: { zh: 'SVG 压缩', en: 'SVG Minifier' }, stage: 1, category: '图片处理', slug: 'svg', live: true },
 
   // ② 编码 / 演练
+  { name: { zh: '技术栈组合器', en: 'Tech Stack Picker' }, stage: 2, category: '代码演练', slug: 'stack', live: true },
   { name: { zh: '代码演练场', en: 'Code Playground' }, stage: 2, category: '代码演练', slug: 'playground', live: true },
   { name: { zh: 'Markdown 表格生成', en: 'Markdown Table Generator' }, stage: 2, category: '代码演练', slug: 'markdown-table', live: true },
   { name: { zh: 'HTML 转 Markdown', en: 'HTML to Markdown' }, stage: 2, category: '代码演练', slug: 'html-to-markdown', live: true },

@@ -6,6 +6,7 @@ export const ui = {
   zh: {
     // Header
     'nav.tools': '工具',
+    'nav.stack': '技术选型',
     'nav.guide': '部署指南',
     'nav.about': '关于',
     'lang.switch': '语言',
@@ -37,6 +38,7 @@ export const ui = {
   },
   en: {
     'nav.tools': 'Tools',
+    'nav.stack': 'Stack Picker',
     'nav.guide': 'Deploy Guide',
     'nav.about': 'About',
     'lang.switch': 'Language',

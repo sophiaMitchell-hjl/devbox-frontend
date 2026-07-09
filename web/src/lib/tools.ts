@@ -52,6 +52,32 @@ export const categoryLabels = (lang: Lang) => categoryLabelsByLang[lang];
 
 export const tools: Tool[] = [
   {
+    slug: 'stack',
+    category: 'dev',
+    related: ['docker-compose', 'nginx', 'semver'],
+    status: 'live',
+    zh: {
+      title: '技术栈组合器',
+      short: '技术栈选型',
+      desc: '自由组合前后端/数据库/配置,即时看懂每项技术与 2026 趋势,并推断适合做什么项目。',
+      keywords: ['技术选型', '前端后端数据库怎么选', '技术栈推荐', 'kafka 有什么用', '2026 技术趋势'],
+      stage: '① 选型 / 规划',
+      beginnerIntro: '技术选型:动手写代码前,先搞清楚该用什么前端、后端、数据库和中间件。这里让你自由组合并即时看懂每项技术。',
+      whenToUse: '想做个项目却不知道用什么技术,或想搞懂 Kafka/Redis 之类到底干嘛时。',
+      whyTool: 'AI 给的选型常泛泛而谈,这里把主流技术的定位、2026 使用现状和常见搭配可视化,选完立刻知道能做什么、要注意什么。',
+    },
+    en: {
+      title: 'Tech Stack Picker',
+      short: 'Stack Picker',
+      desc: 'Combine frontend/backend/database/config, understand each technology and its 2026 trend, and see what kind of project the stack suits.',
+      keywords: ['tech stack chooser', 'how to choose frontend backend database', 'tech stack recommendation', 'what is kafka for', '2026 tech trends'],
+      stage: '① Planning / Selection',
+      beginnerIntro: 'Tech selection: before writing code, figure out which frontend, backend, database and middleware to use. Combine them freely here and understand each at a glance.',
+      whenToUse: "When you want to build something but don't know what tech to use, or want to grasp what Kafka/Redis actually do.",
+      whyTool: 'AI stack advice is often vague; this visualizes where mainstream technologies fit, their 2026 adoption, and common pairings, so you immediately see what you can build and what to watch out for.',
+    },
+  },
+  {
     slug: 'cron',
     category: 'config',
     related: ['docker-compose', 'nginx', 'timezone'],

@@ -1,0 +1,348 @@
+---
+import ToolPageLayout from '../../layouts/ToolPageLayout.astro';
+import { localePaths, langOfParam } from '../../i18n';
+import { optionsByLayer, LAYER_LABEL, trendLabel, presets, type Layer, type Trend } from '../../lib/stack';
+
+export const getStaticPaths = localePaths;
+const lang = langOfParam(Astro.params.loc);
+
+const copy = {
+  zh: {
+    title: '技术栈组合器 - 前端/后端/数据库选型推荐(2026) | DevBox',
+    description:
+      '交互式技术栈选型工具:自己组合前端、后端、数据库、开发工具链与基础设施,把鼠标移到任意技术上即刻看到它的详细介绍与 2026 使用现状(主流/上升/式微),选中即推断这套组合适合做什么类型的项目,并给出搭配提醒与补充建议(Redis/Kafka/向量库等)。',
+    intro: '把鼠标移到左边任意技术上,右边立刻显示它是什么、2026 还流不流行;点一下就选进你的组合,右下方会告诉你这套能做什么类型的项目、要注意什么。',
+    presetTitle: '不知道从哪开始?按项目类型一键套用',
+    presetDesc: '选一个你想做的项目类型,自动填好一整套推荐技术栈,再在下面自由增删。',
+    required: '必选',
+    optional: '可选',
+    multi: '可多选',
+    none: '暂不选',
+    focusHint: '把鼠标移到左边任意技术上 —— 这里会立刻显示它的详细介绍。点一下即选入你的技术栈。',
+    resultTitle: '这套组合适合做',
+    resultEmpty: '选好前端和后端后,这里告诉你能做什么类型的项目。',
+    examplesTitle: '典型项目',
+    warnTitle: '搭配提醒',
+    suggestTitle: '建议补充',
+    overviewTitle: '2026 技术趋势总览',
+    overviewDesc: '按层速览各技术的 2026 使用现状,悬停标签看简介。不确定选什么?优先从 🔥 主流 里挑。',
+    useLabel: '用途',
+    faqs: [
+      {
+        q: '前端和后端框架必须成对使用吗?',
+        a: '不一定。前后端可以完全独立(如 React 前端 + Java 后端,通过 API 通信),这是最灵活的方式;也可以用 Next.js、Django 这类"全栈框架"一套搞定。小白想省事,推荐先用全栈框架或 BaaS(如 Supabase)。',
+      },
+      {
+        q: 'Kafka、消息队列到底什么时候才需要?',
+        a: '当你出现"耗时且不需要立刻返回结果"的任务(发邮件、生成报表、订单后续处理),或要在多个服务间异步传递大量事件时,才需要消息队列。中小规模用 RabbitMQ 就够,只有海量事件流(日志、埋点、大数据管道)才用 Kafka。起步阶段基本用不到,别过早引入。',
+      },
+      {
+        q: 'SQLite 能用在生产环境吗?',
+        a: '可以。对读多写少、并发不高的中小型站点,SQLite 足够稳,且零运维。配合 Turso/LiteFS 等方案还能做分布式。真正高并发写入的大型系统才需要换 PostgreSQL/MySQL。',
+      },
+      {
+        q: '这个工具的推荐能当"标准答案"吗?',
+        a: '它给的是基于主流实践的方向性参考,帮你快速理解各技术定位与常见搭配。真实选型还要结合团队已有技能、招聘、预算和具体需求——最适合的往往是"团队最熟的那套"。',
+      },
+    ],
+  },
+  en: {
+    title: 'Tech Stack Picker - Frontend/Backend/Database choices (2026) | DevBox',
+    description:
+      'An interactive tech-stack picker: combine frontend, backend, database, toolchain and infrastructure. Hover any technology to instantly see what it is and its 2026 adoption status (mainstream/rising/declining); select it to get an instant read on what kind of project the stack suits, plus pairing warnings and add-on suggestions (Redis/Kafka/vector DB).',
+    intro: 'Hover any technology on the left to instantly see what it is and whether it is still popular in 2026. Click to add it to your stack — the panel then tells you what kind of project the combination suits and what to watch out for.',
+    presetTitle: 'Not sure where to start? Apply a stack by project type',
+    presetDesc: 'Pick the kind of project you want to build to auto-fill a recommended stack, then tweak it below.',
+    required: 'required',
+    optional: 'optional',
+    multi: 'multi-select',
+    none: 'none',
+    focusHint: 'Hover any technology on the left — its full description appears here instantly. Click to add it to your stack.',
+    resultTitle: 'This stack is good for',
+    resultEmpty: 'Once you pick a frontend and backend, this tells you what kind of project it suits.',
+    examplesTitle: 'Example projects',
+    warnTitle: 'Pairing notes',
+    suggestTitle: 'Suggested add-ons',
+    overviewTitle: '2026 tech-trend overview',
+    overviewDesc: 'Mainstream options by layer; the badge shows current developer adoption. Not sure what to pick? Start from the 🔥 Mainstream ones.',
+    useLabel: 'Use',
+    faqs: [
+      {
+        q: 'Do the frontend and backend frameworks have to be used as a pair?',
+        a: 'Not necessarily. They can be fully independent (e.g. a React frontend + a Java backend talking over an API), which is the most flexible; or a full-stack framework like Next.js or Django can do both. If you want the least hassle, start with a full-stack framework or a BaaS like Supabase.',
+      },
+      {
+        q: 'When do you actually need Kafka or a message queue?',
+        a: 'Only when you have slow tasks that need not return immediately (sending email, generating reports, post-order processing), or need to pass large volumes of events asynchronously between services. RabbitMQ is enough at small/mid scale; Kafka is for massive event streams (logs, analytics, big-data pipelines). You rarely need it early — do not adopt it prematurely.',
+      },
+      {
+        q: 'Can SQLite be used in production?',
+        a: 'Yes. For read-heavy, low-concurrency small/mid sites, SQLite is stable and zero-ops, and can even go distributed with Turso/LiteFS. Only genuinely high-write, high-concurrency systems need to move to PostgreSQL/MySQL.',
+      },
+      {
+        q: 'Should I treat this tool’s recommendation as the definitive answer?',
+        a: 'It gives directional guidance based on mainstream practice, to help you quickly grasp where each technology fits and how they pair. Real decisions also depend on your team’s existing skills, hiring, budget and requirements — often the best stack is simply the one your team knows best.',
+      },
+    ],
+  },
+}[lang];
+
+const LAYERS: { layer: Layer; kind: 'single' | 'multi'; requirement: 'required' | 'optional'; allowNone: boolean }[] = [
+  { layer: 'frontend', kind: 'single', requirement: 'required', allowNone: false },
+  { layer: 'backend', kind: 'single', requirement: 'required', allowNone: false },
+  { layer: 'database', kind: 'single', requirement: 'optional', allowNone: true },
+  { layer: 'plugin', kind: 'multi', requirement: 'optional', allowNone: false },
+  { layer: 'infra', kind: 'multi', requirement: 'optional', allowNone: false },
+];
+
+// 趋势徽章配色(服务端 + 客户端各一份,保持一致)
+const trendCls: Record<Trend, string> = {
+  mainstream: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
+  rising: 'bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400',
+  niche: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
+  declining: 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400',
+};
+const trendEmoji: Record<Trend, string> = { mainstream: '🔥', rising: '📈', niche: '🌱', declining: '📉' };
+---
+
+<ToolPageLayout slug="stack" title={copy.title} description={copy.description} faqs={copy.faqs} wide={true}>
+  <p class="mb-6 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">{copy.intro}</p>
+
+  <!-- 项目类型预设:一键套用 -->
+  <section class="mb-8 rounded-2xl border border-zinc-200 bg-zinc-50/60 p-5 dark:border-zinc-800 dark:bg-zinc-900/40">
+    <h2 class="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{copy.presetTitle}</h2>
+    <p class="mt-1 mb-3 text-xs text-zinc-500 dark:text-zinc-400">{copy.presetDesc}</p>
+    <div class="flex flex-wrap gap-2">
+      {
+        presets.map((p) => (
+          <button
+            type="button"
+            class="preset-btn max-w-[15rem] rounded-xl border border-zinc-300 bg-white px-3.5 py-2 text-left transition-colors hover:border-violet-400 hover:bg-violet-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-violet-600 dark:hover:bg-violet-500/10"
+            data-preset={p.id}
+          >
+            <span class="block text-sm font-medium text-zinc-800 dark:text-zinc-100">{p.name[lang]}</span>
+            <span class="mt-0.5 block text-xs leading-snug text-zinc-500 dark:text-zinc-400">{p.desc[lang]}</span>
+          </button>
+        ))
+      }
+    </div>
+  </section>
+
+  <div class="lg:grid lg:grid-cols-[1fr_400px] lg:items-start lg:gap-8">
+    <!-- 左:选择区 -->
+    <div id="selectors" class="space-y-5">
+      {
+        LAYERS.map(({ layer, kind, requirement, allowNone }) => (
+          <section>
+            <div class="mb-2 flex items-center gap-2">
+              <h2 class="text-sm font-semibold text-zinc-800 dark:text-zinc-100">{LAYER_LABEL[layer][lang]}</h2>
+              <span class="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                {requirement === 'required' ? copy.required : kind === 'multi' ? copy.multi : copy.optional}
+              </span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              {allowNone && (
+                <button
+                  type="button"
+                  class="opt-btn rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-500 transition-colors hover:border-violet-300 dark:border-zinc-700 dark:text-zinc-400"
+                  data-layer={layer}
+                  data-id=""
+                  data-kind={kind}
+                >
+                  {copy.none}
+                </button>
+              )}
+              {optionsByLayer(layer).map((o) => (
+                <button
+                  type="button"
+                  class="opt-btn inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 transition-colors hover:border-violet-400 dark:border-zinc-700 dark:text-zinc-200"
+                  data-layer={layer}
+                  data-id={o.id}
+                  data-kind={kind}
+                >
+                  {o.name[lang]}
+                  <span class="text-[11px] leading-none" title={trendLabel[o.trend][lang]}>{trendEmoji[o.trend]}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ))
+      }
+    </div>
+
+    <!-- 右:吸顶实时面板(悬停看介绍 / 选中出结论) -->
+    <div class="mt-8 space-y-4 lg:mt-0 lg:sticky lg:top-24">
+      <div id="focus" class="min-h-[11rem] rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <p class="text-sm leading-relaxed text-zinc-400">{copy.focusHint}</p>
+      </div>
+      <div
+        id="verdict"
+        class="rounded-2xl border border-violet-200 bg-violet-50/50 p-5 dark:border-violet-500/20 dark:bg-violet-500/5"
+      >
+        <p class="text-sm text-zinc-500 dark:text-zinc-400">{copy.resultEmpty}</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { getOption, evaluate, trendLabel, LAYER_LABEL, presets } from '../../lib/stack';
+    import type { Trend, Selection, Bi } from '../../lib/stack';
+
+    const L: 'zh' | 'en' = document.documentElement.dataset.lang === 'en' ? 'en' : 'zh';
+    const tr = (b: Bi) => b[L];
+
+    const TXT = {
+      focusHint: L === 'en'
+        ? 'Hover any technology on the left — its full description appears here instantly. Click to add it to your stack.'
+        : '把鼠标移到左边任意技术上 —— 这里会立刻显示它的详细介绍。点一下即选入你的技术栈。',
+      resultTitle: L === 'en' ? 'This stack is good for' : '这套组合适合做',
+      resultEmpty: L === 'en'
+        ? 'Once you pick a frontend and backend, this tells you what kind of project it suits.'
+        : '选好前端和后端后,这里告诉你能做什么类型的项目。',
+      examplesTitle: L === 'en' ? 'Example projects' : '典型项目',
+      warnTitle: L === 'en' ? 'Pairing notes' : '搭配提醒',
+      suggestTitle: L === 'en' ? 'Suggested add-ons' : '建议补充',
+      useLabel: L === 'en' ? 'Use' : '用途',
+      needPrefix: L === 'en' ? 'Still to pick: ' : '还需选择:',
+      needSuffix: L === 'en' ? ' — pick both a frontend and a backend for a sharper result.' : '(选齐前端 + 后端,结论更准)',
+      sep: L === 'en' ? ', ' : '、',
+    };
+
+    const trendCls: Record<Trend, string> = {
+      mainstream: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
+      rising: 'bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400',
+      niche: 'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
+      declining: 'bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400',
+    };
+
+    const activeCls = ['!border-violet-500', 'bg-violet-50', 'dark:bg-violet-500/10', 'ring-1', 'ring-violet-500/30'];
+
+    const state: Selection = { frontend: undefined, backend: undefined, database: undefined, plugins: [], infra: [] };
+
+    const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('.opt-btn'));
+    const focusEl = document.getElementById('focus')!;
+    const verdictEl = document.getElementById('verdict')!;
+
+    function isActive(layer: string, id: string): boolean {
+      if (layer === 'frontend') return state.frontend === (id || undefined);
+      if (layer === 'backend') return state.backend === (id || undefined);
+      if (layer === 'database') return state.database === (id || undefined);
+      if (layer === 'plugin') return id !== '' && state.plugins.includes(id);
+      if (layer === 'infra') return id !== '' && state.infra.includes(id);
+      return false;
+    }
+
+    function paint() {
+      for (const b of buttons) {
+        const on = isActive(b.dataset.layer!, b.dataset.id!);
+        activeCls.forEach((c) => b.classList.toggle(c, on));
+      }
+    }
+
+    function badge(trend: Trend): string {
+      return `<span class="rounded px-1.5 py-0.5 text-[10px] leading-none ${trendCls[trend]}">${tr(trendLabel[trend])}</span>`;
+    }
+
+    // 右上:显示某个技术的详细介绍(id 为空则回到提示语)
+    function renderFocus(id: string | null) {
+      const o = id ? getOption(id) : undefined;
+      if (!o) {
+        focusEl.innerHTML = `<p class="text-sm leading-relaxed text-zinc-400">${TXT.focusHint}</p>`;
+        return;
+      }
+      focusEl.innerHTML = `
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-base font-semibold text-zinc-900 dark:text-white">${tr(o.name)}</span>
+          ${badge(o.trend)}
+        </div>
+        <p class="mt-1 text-xs text-zinc-400">${tr(LAYER_LABEL[o.layer])}${o.trendNote ? ' · ' + tr(o.trendNote) : ''}</p>
+        <p class="mt-2.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">${tr(o.blurb)}</p>
+        <p class="mt-2.5 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-medium">${TXT.useLabel}:</span> ${tr(o.useCase)}</p>`;
+    }
+
+    function list(title: string, items: string[], color: string): string {
+      if (!items.length) return '';
+      return `
+        <div class="mt-4">
+          <p class="text-xs font-semibold uppercase tracking-wide ${color}">${title}</p>
+          <ul class="mt-1.5 space-y-1.5">
+            ${items.map((i) => `<li class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">${i}</li>`).join('')}
+          </ul>
+        </div>`;
+    }
+
+    function renderVerdict() {
+      const v = evaluate(state);
+      // 纯静态/内容型前端(如 Astro)本就不需要后端,不提示补后端
+      const feStatic = state.frontend ? !!getOption(state.frontend)?.tags.includes('static') : false;
+      const missing: string[] = [];
+      if (!state.frontend) missing.push(tr(LAYER_LABEL.frontend));
+      if (!state.backend && state.frontend && !feStatic) missing.push(tr(LAYER_LABEL.backend));
+      if (v.empty) {
+        verdictEl.innerHTML = `<p class="text-sm text-zinc-500 dark:text-zinc-400">${TXT.resultEmpty}</p>`;
+        return;
+      }
+      let html = '';
+      if (missing.length) {
+        html += `<div class="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">👉 ${TXT.needPrefix}<strong>${missing.join(TXT.sep)}</strong>${TXT.needSuffix}</div>`;
+      }
+      html += `<p class="text-xs font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">${TXT.resultTitle}</p>`;
+      if (v.archetypes.length) {
+        html += `<div class="mt-2 space-y-2">${v.archetypes
+          .map(
+            (a) => `
+          <div>
+            <span class="inline-block rounded-lg bg-violet-600 px-2.5 py-1 text-sm font-medium text-white">${tr(a.name)}</span>
+            <p class="mt-1.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">${tr(a.why)}</p>
+          </div>`
+          )
+          .join('')}</div>`;
+      }
+      html += list(TXT.examplesTitle, v.examples.map(tr), 'text-zinc-500 dark:text-zinc-400');
+      html += list(TXT.warnTitle, v.warnings.map(tr), 'text-amber-600 dark:text-amber-400');
+      html += list(TXT.suggestTitle, v.suggestions.map(tr), 'text-emerald-600 dark:text-emerald-400');
+      verdictEl.innerHTML = html;
+    }
+
+    for (const b of buttons) {
+      const id = b.dataset.id!;
+      // 悬停即预览介绍(无需选择);内容会一直保留,滚动时不再消失或跳动
+      if (id) b.addEventListener('mouseenter', () => renderFocus(id));
+      // 点选:切换选择状态,并把该技术的介绍显示在右上
+      b.addEventListener('click', () => {
+        const layer = b.dataset.layer!;
+        if (layer === 'frontend') state.frontend = state.frontend === id ? undefined : id || undefined;
+        else if (layer === 'backend') state.backend = state.backend === id ? undefined : id || undefined;
+        else if (layer === 'database') state.database = id === '' ? undefined : state.database === id ? undefined : id;
+        else if (layer === 'plugin') {
+          if (id) state.plugins = state.plugins.includes(id) ? state.plugins.filter((x) => x !== id) : [...state.plugins, id];
+        } else if (layer === 'infra') {
+          if (id) state.infra = state.infra.includes(id) ? state.infra.filter((x) => x !== id) : [...state.infra, id];
+        }
+        if (id) renderFocus(id);
+        paint();
+        renderVerdict();
+      });
+    }
+
+    // 项目类型预设:一键套用整套技术栈
+    const presetButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('.preset-btn'));
+    for (const pb of presetButtons) {
+      pb.addEventListener('click', () => {
+        const p = presets.find((x) => x.id === pb.dataset.preset);
+        if (!p) return;
+        state.frontend = p.sel.frontend;
+        state.backend = p.sel.backend;
+        state.database = p.sel.database;
+        state.plugins = [...p.sel.plugins];
+        state.infra = [...p.sel.infra];
+        renderFocus(state.frontend ?? state.backend ?? null);
+        paint();
+        renderVerdict();
+      });
+    }
+
+    paint();
+    renderVerdict();
+  </script>
+</ToolPageLayout>

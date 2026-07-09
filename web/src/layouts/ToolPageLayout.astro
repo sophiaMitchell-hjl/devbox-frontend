@@ -12,10 +12,11 @@ interface Props {
   description: string;
   faqs?: { q: string; a: string }[];
   note?: string; // 覆盖底部说明(如需服务器的工具)
+  wide?: boolean; // 宽版容器(用于左右分栏的工具,如技术栈组合器)
 }
 const lang = getLang(Astro.url);
 const t = useUI(lang);
-const { slug, title, description, faqs = [], note = t('tool.note') } = Astro.props;
+const { slug, title, description, faqs = [], note = t('tool.note'), wide = false } = Astro.props;
 const tool = getTool(slug, lang)!;
 const related = relatedTools(slug, lang);
 
@@ -47,7 +48,7 @@ const appJsonLd = {
 ---
 
 <BaseLayout title={title} description={description} ogType="article">
-  <div class="mx-auto max-w-3xl px-6 py-10">
+  <div class={`mx-auto ${wide ? 'max-w-5xl' : 'max-w-3xl'} px-6 py-10`}>
     <Breadcrumb
       lang={lang}
       items={[{ name: t('crumb.home'), href: localePath('/', lang) }, { name: tool.short }]}
