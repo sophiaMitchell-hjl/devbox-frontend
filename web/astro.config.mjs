@@ -1,9 +1,9 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import { readdirSync, readFileSync } from 'node:fs';
 import linkCheck from './link-check.mjs';
+import flatSitemap from './sitemap.mjs';
 
 const SITE = 'https://devbox.nextlink.me';
 
@@ -31,13 +31,7 @@ export default defineConfig({
   site: SITE,
   trailingSlash: 'never',
   integrations: [
-    sitemap({
-      serialize(item) {
-        const lastmod = LASTMODS.get(item.url);
-        if (lastmod) item.lastmod = new Date(`${lastmod}T00:00:00Z`).toISOString();
-        return item;
-      },
-    }),
+    flatSitemap({ site: SITE, lastmods: LASTMODS }),
     linkCheck(),
   ],
   vite: {
