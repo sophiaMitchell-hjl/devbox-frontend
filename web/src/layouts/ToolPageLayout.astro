@@ -3,6 +3,7 @@ import BaseLayout from './BaseLayout.astro';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import { getTool } from '../lib/tools';
 import { relatedTools } from '../lib/related';
+import { getClusterArticles, TYPE_LABEL } from '../lib/articles';
 import { getLang, localePath } from '../i18n';
 import { useUI } from '../i18n/ui';
 
@@ -19,6 +20,8 @@ const t = useUI(lang);
 const { slug, title, description, faqs = [], note = t('tool.note'), wide = false } = Astro.props;
 const tool = getTool(slug, lang)!;
 const related = relatedTools(slug, lang);
+// 支柱页 → 集群内容页的下行内链。新增文章零改动自动出现(见《内链策略.md》§5.3)。
+const articles = await getClusterArticles(slug, lang);
 
 const faqJsonLd = faqs.length
   ? {
@@ -89,6 +92,25 @@ const appJsonLd = {
                 </summary>
                 <p class="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{f.a}</p>
               </details>
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    {
+      articles.length > 0 && (
+        <section class="mt-14">
+          <h2 class="text-xl font-semibold text-zinc-900 dark:text-white">{t('tool.deepDive')}</h2>
+          <div class="mt-4 grid gap-3 sm:grid-cols-2">
+            {articles.map((a) => (
+              <a
+                href={localePath(`/${slug}/${a.slug}`, lang)}
+                class="rounded-xl border border-zinc-200 bg-white p-4 transition-colors hover:border-violet-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-violet-700"
+              >
+                <span class="text-xs text-violet-500">{TYPE_LABEL[lang][a.type] ?? a.type}</span>
+                <span class="mt-1 block font-medium text-zinc-900 dark:text-white">{a.title}</span>
+              </a>
             ))}
           </div>
         </section>

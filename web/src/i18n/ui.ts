@@ -26,6 +26,7 @@ export const ui = {
     'tool.whenUse': '什么时候用:',
     'tool.note': '全部在你的浏览器本地计算,不上传任何数据。',
     'tool.faq': '常见问题',
+    'tool.deepDive': '深入了解',
     'tool.related': '相关工具',
     // ArticleLayout
     'article.author': 'DevBox 团队',
@@ -55,6 +56,7 @@ export const ui = {
     'tool.whenUse': 'When to use: ',
     'tool.note': 'Everything runs locally in your browser — nothing is uploaded.',
     'tool.faq': 'FAQ',
+    'tool.deepDive': 'Learn more',
     'tool.related': 'Related tools',
     'article.author': 'DevBox Team',
     'article.updated': 'Last updated',
