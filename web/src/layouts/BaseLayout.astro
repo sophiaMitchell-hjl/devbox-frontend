@@ -10,10 +10,12 @@ interface Props {
   ogType?: string;
   image?: string; // 覆盖默认社交分享图(相对路径或绝对 URL)
 }
-const { title, description, ogType = 'website', image = '/og-default.png' } = Astro.props;
+const { title, description, ogType = 'website', image } = Astro.props;
 const lang = getLang(Astro.url);
 const canonical = new URL(Astro.url.pathname, Astro.site).href.replace(/\/$/, '') || Astro.url.href;
-const ogImage = new URL(image, Astro.site).href;
+// 未显式指定分享图时,按语言选默认图:英文页用 satori 生成的英文卡片,中文页用手工图。
+const defaultImage = lang === 'en' ? '/og-default-en.png' : '/og-default.png';
+const ogImage = new URL(image ?? defaultImage, Astro.site).href;
 
 // hreflang 备用链接:同一页面的中英规范 URL
 const basePath = stripLang(Astro.url.pathname);
@@ -62,6 +64,7 @@ const enHref = abs(localePath(basePath, 'en'));
 
     <meta property="og:type" content={ogType} />
     <meta property="og:locale" content={lang === 'en' ? 'en_US' : 'zh_CN'} />
+    <meta property="og:locale:alternate" content={lang === 'en' ? 'zh_CN' : 'en_US'} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />

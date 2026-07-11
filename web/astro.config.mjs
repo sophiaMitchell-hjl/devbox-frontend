@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { readdirSync, readFileSync } from 'node:fs';
 import linkCheck from './link-check.mjs';
 import flatSitemap from './sitemap.mjs';
+import ogImage from './og-image.mjs';
 
 const SITE = 'https://devbox.nextlink.me';
 
@@ -32,6 +33,7 @@ export default defineConfig({
   trailingSlash: 'never',
   integrations: [
     flatSitemap({ site: SITE, lastmods: LASTMODS }),
+    ogImage(),
     linkCheck(),
   ],
   vite: {
