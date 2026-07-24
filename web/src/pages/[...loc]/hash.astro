@@ -7,91 +7,460 @@ const lang = langOfParam(Astro.params.loc);
 
 const copy = {
   zh: {
-    title: 'Hash 生成器 - 在线计算 SHA-256 / SHA-512 | DevBox',
+    title: '哈希生成器 - 在线 MD5 / SHA 哈希计算 | DevBox',
     description:
-      '在线 Hash 生成:输入文本即时计算 SHA-1、SHA-256、SHA-384、SHA-512 哈希值,基于浏览器原生 Web Crypto 本地计算,数据不外传。',
+      '在线哈希生成器，支持 MD5、SHA-1、SHA-256、SHA-384、SHA-512，可对文本或文件生成哈希值，输出 HEX 或 Base64 格式，全程浏览器本地计算，数据不上传。',
+    textTab: '文本',
+    fileTab: '文件',
     inputLabel: '输入文本',
-    placeholder: '在此输入要计算哈希的文本…',
+    inputPlaceholder: '在此输入文本…',
+    dropZoneText: '拖放文件至此，或点击选择',
+    algoLabel: '算法',
+    fmtLabel: '输出格式',
+    hashLabel: '哈希值',
+    copy: '复制',
+    copied: '已复制！',
+    errRead: '文件读取失败',
     faqs: [
       {
-        q: '为什么没有 MD5?',
-        a: '浏览器原生的 Web Crypto 出于安全考虑不提供 MD5。本工具用原生接口本地计算,因此只支持 SHA 系列。MD5/SHA 已不适合用于密码存储,请改用 bcrypt/argon2 等专用算法。',
+        q: '什么是哈希算法，它有哪些核心特性？',
+        a: '哈希算法是一种将任意长度数据映射为固定长度摘要的单向函数。四大核心特性：①确定性——相同输入始终产生相同输出；②雪崩效应——输入微小改变导致输出剧变；③不可逆性——无法从哈希值反推原始数据；④抗碰撞性——极难找到两个产生相同哈希的不同输入。哈希算法广泛用于文件完整性校验、密码存储、数字签名、区块链等领域。',
+      },
+      {
+        q: '各哈希算法有什么区别，应该如何选择？',
+        a: 'MD5（128 位）速度最快，但存在已知碰撞漏洞，仅适合非安全场景的文件校验；SHA-1（160 位）已被证明不安全，不推荐新项目使用；SHA-256（256 位）是当前主流安全标准，广泛用于 TLS 证书、代码签名、Git 提交等；SHA-384 和 SHA-512 安全强度更高，适合对抗量子计算等高级威胁的场景。若只需文件完整性校验可用 MD5，安全场景请至少选 SHA-256。',
       },
     ],
   },
   en: {
-    title: 'Hash Generator - Compute SHA-256 / SHA-512 Online | DevBox',
+    title: 'Hash Generator - Online MD5 / SHA Hash Calculator | DevBox',
     description:
-      'Online hash generator: type text to instantly compute SHA-1, SHA-256, SHA-384 and SHA-512 hashes, computed locally with the browser-native Web Crypto — your data never leaves the page.',
-    inputLabel: 'Input text',
-    placeholder: 'Type the text to hash here…',
+      'Online hash generator supporting MD5, SHA-1, SHA-256, SHA-384, SHA-512. Hash any text or file and get the digest in HEX or Base64. Computed entirely in your browser — nothing is uploaded.',
+    textTab: 'Text',
+    fileTab: 'File',
+    inputLabel: 'Input Text',
+    inputPlaceholder: 'Enter text here…',
+    dropZoneText: 'Drop a file here, or click to select',
+    algoLabel: 'Algorithm',
+    fmtLabel: 'Output Format',
+    hashLabel: 'Hash',
+    copy: 'Copy',
+    copied: 'Copied!',
+    errRead: 'Failed to read file',
     faqs: [
       {
-        q: 'Why is there no MD5?',
-        a: "The browser's native Web Crypto does not provide MD5 for security reasons. This tool computes locally via that native API, so only the SHA family is supported. MD5/SHA are no longer suitable for password storage — use a dedicated algorithm like bcrypt or argon2 instead.",
+        q: 'What is a hash algorithm and what are its key properties?',
+        a: 'A hash algorithm is a one-way function that maps arbitrary-length data to a fixed-length digest. Four key properties: ① Determinism — the same input always produces the same output; ② Avalanche effect — a tiny input change causes a completely different hash; ③ One-way — you cannot reverse-engineer the original data from the hash; ④ Collision resistance — it is computationally infeasible to find two different inputs with the same hash. Hash functions are used everywhere: file integrity, password storage, digital signatures, blockchains, and more.',
+      },
+      {
+        q: 'Which hash algorithm should I choose?',
+        a: 'MD5 (128-bit) is the fastest but has known collision vulnerabilities — only use it for non-security checksums. SHA-1 (160-bit) is deprecated and should not be used in new projects. SHA-256 is the current industry standard, widely used in TLS certificates, code signing, and Git commits. SHA-384 and SHA-512 offer higher security margins for post-quantum threat models. For security-sensitive work, always choose SHA-256 or stronger.',
       },
     ],
   },
 }[lang];
 
-const algos = ['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512'];
+const inputCls =
+  'w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
 ---
 
 <ToolPageLayout slug="hash" title={copy.title} description={copy.description} faqs={copy.faqs}>
-  <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.inputLabel}</label>
-  <textarea id="in" class="h-32 w-full rounded-xl border border-zinc-300 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" placeholder={copy.placeholder} spellcheck="false"></textarea>
 
-  <div class="mt-5 space-y-3">
-    {
-      algos.map((a) => (
-        <div>
-          <p class="mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">{a}</p>
-          <div class="flex items-center gap-2">
-            <code id={`h-${a}`} class="flex-1 rounded-lg bg-zinc-900 px-3 py-2 font-mono text-xs break-all text-zinc-100" />
-            <button data-algo={a} class="hash-copy shrink-0 text-xs font-medium text-violet-600 dark:text-violet-400">{lang === 'en' ? 'Copy' : '复制'}</button>
-          </div>
-        </div>
-      ))
-    }
+  <!-- Mode tabs -->
+  <div class="mb-5 inline-flex rounded-xl border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-800 dark:bg-zinc-900">
+    <button id="tab-text" class="tab-btn rounded-lg px-4 py-1.5 text-sm font-medium transition-colors">{copy.textTab}</button>
+    <button id="tab-file" class="tab-btn rounded-lg px-4 py-1.5 text-sm font-medium transition-colors">{copy.fileTab}</button>
   </div>
 
+  <!-- Text panel -->
+  <div id="panel-text">
+    <label class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.inputLabel}</label>
+    <textarea
+      id="text-input"
+      class={`${inputCls} h-36 resize-none`}
+      placeholder={copy.inputPlaceholder}
+      spellcheck="false"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+    ></textarea>
+  </div>
+
+  <!-- File panel -->
+  <div id="panel-file" class="hidden">
+    <div
+      id="drop-zone"
+      role="button"
+      tabindex="0"
+      class="flex h-36 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 transition-colors hover:border-violet-400 hover:bg-violet-50/40 dark:border-zinc-700 dark:bg-zinc-950 dark:hover:border-violet-500 dark:hover:bg-violet-500/5"
+    >
+      <svg class="mb-2 h-8 w-8 text-zinc-400 dark:text-zinc-600" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+      </svg>
+      <p class="text-sm text-zinc-500 dark:text-zinc-400">{copy.dropZoneText}</p>
+      <input type="file" id="file-input" class="hidden" />
+    </div>
+    <!-- File info card -->
+    <div id="file-info" class="mt-3 hidden rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+      <div class="flex items-center gap-3">
+        <svg class="h-5 w-5 shrink-0 text-violet-500 dark:text-violet-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
+        </svg>
+        <div class="min-w-0 flex-1">
+          <p id="file-name" class="truncate text-sm font-medium text-zinc-900 dark:text-white"></p>
+          <p id="file-size" class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls row -->
+  <div class="mt-5 flex flex-wrap gap-6">
+    <!-- Algorithm selector -->
+    <div>
+      <p class="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.algoLabel}</p>
+      <div class="flex flex-wrap gap-1.5">
+        {['MD5', 'SHA-1', 'SHA-256', 'SHA-384', 'SHA-512'].map((a) => (
+          <button
+            data-algo={a}
+            class="algo-btn rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+          >{a}</button>
+        ))}
+      </div>
+    </div>
+
+    <!-- Output format toggle -->
+    <div>
+      <p class="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.fmtLabel}</p>
+      <div class="inline-flex rounded-xl border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-800 dark:bg-zinc-900">
+        <button id="fmt-hex" class="fmt-btn rounded-lg px-3 py-1.5 text-xs font-medium transition-colors">HEX</button>
+        <button id="fmt-b64" class="fmt-btn rounded-lg px-3 py-1.5 text-xs font-medium transition-colors">BASE64</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hash output -->
+  <div class="mt-5">
+    <div class="mb-1.5 flex items-center justify-between">
+      <label class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.hashLabel}</label>
+      <button
+        id="copy-btn"
+        type="button"
+        class="rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+      >{copy.copy}</button>
+    </div>
+    <div
+      id="hash-out"
+      class="min-h-[3rem] w-full break-all rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+    ></div>
+  </div>
+
+  <!-- Error -->
+  <p id="err-msg" class="mt-3 hidden rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-500/5 dark:text-red-300"></p>
+
   <script>
-    const L = document.documentElement.dataset.lang === 'en' ? 'en' : 'zh';
-    const TXT = {
-      copy: L === 'en' ? 'Copy' : '复制',
-      copied: L === 'en' ? 'Copied' : '已复制',
+    /* ------------------------------------------------------------------ */
+    /*  i18n                                                                */
+    /* ------------------------------------------------------------------ */
+    const L = (document.documentElement as HTMLElement).dataset.lang === 'en' ? 'en' : 'zh';
+    const T = {
+      copy:    L === 'en' ? 'Copy'                : '复制',
+      copied:  L === 'en' ? 'Copied!'             : '已复制！',
+      errRead: L === 'en' ? 'Failed to read file' : '文件读取失败',
     };
-    const inEl = document.getElementById('in') as HTMLTextAreaElement;
-    const algos = ['SHA-1', 'SHA-256', 'SHA-384', 'SHA-512'];
 
-    // 按语言设置复制按钮初始文案
-    document.querySelectorAll<HTMLButtonElement>('.hash-copy').forEach((b) => (b.textContent = TXT.copy));
+    /* ------------------------------------------------------------------ */
+    /*  State                                                               */
+    /* ------------------------------------------------------------------ */
+    type Mode = 'text' | 'file';
+    type Fmt  = 'hex'  | 'b64';
 
-    async function digestHex(algo: string, text: string) {
-      const buf = new TextEncoder().encode(text);
-      const h = await crypto.subtle.digest(algo, buf);
-      return Array.from(new Uint8Array(h))
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join('');
+    let mode: Mode = 'text';
+    let algo       = 'SHA-256';
+    let fmt: Fmt   = 'hex';
+    let fileBytes: Uint8Array | null = null;
+
+    /* ------------------------------------------------------------------ */
+    /*  DOM refs                                                            */
+    /* ------------------------------------------------------------------ */
+    const panelText   = document.getElementById('panel-text')!;
+    const panelFile   = document.getElementById('panel-file')!;
+    const textInput   = document.getElementById('text-input') as HTMLTextAreaElement;
+    const dropZone    = document.getElementById('drop-zone')!;
+    const fileInput   = document.getElementById('file-input') as HTMLInputElement;
+    const fileInfo    = document.getElementById('file-info')!;
+    const fileNameEl  = document.getElementById('file-name')!;
+    const fileSizeEl  = document.getElementById('file-size')!;
+    const hashOut     = document.getElementById('hash-out')!;
+    const errMsg      = document.getElementById('err-msg')!;
+    const copyBtn     = document.getElementById('copy-btn')!;
+    const tabText     = document.getElementById('tab-text')!;
+    const tabFile     = document.getElementById('tab-file')!;
+    const fmtHex      = document.getElementById('fmt-hex')!;
+    const fmtB64      = document.getElementById('fmt-b64')!;
+    const algoButtons = document.querySelectorAll<HTMLButtonElement>('.algo-btn');
+
+    /* ------------------------------------------------------------------ */
+    /*  Pure-JS MD5 — correct 64-step RFC 1321 implementation              */
+    /* ------------------------------------------------------------------ */
+    function md5(data: Uint8Array): Uint8Array {
+      // Safe 32-bit modular add: avoids JS float overflow for values > 2^31
+      function add(a: number, b: number): number {
+        const lo = (a & 0xffff) + (b & 0xffff);
+        return (((a >>> 16) + (b >>> 16) + (lo >>> 16)) << 16) | (lo & 0xffff);
+      }
+      function rol(x: number, n: number): number { return (x << n) | (x >>> (32 - n)); }
+      function F(b: number, c: number, d: number): number { return (b & c) | (~b & d); }
+      function G(b: number, c: number, d: number): number { return (b & d) | (c & ~d); }
+      function H(b: number, c: number, d: number): number { return b ^ c ^ d; }
+      function I(b: number, c: number, d: number): number { return c ^ (b | ~d); }
+
+      // Append 0x80 pad, then zeros to 56 mod 64, then 64-bit LE bit-length
+      const len    = data.length;
+      const padLen = ((len % 64) < 56) ? (56 - len % 64) : (120 - len % 64);
+      const msg    = new Uint8Array(len + padLen + 8);
+      msg.set(data);
+      msg[len] = 0x80;
+      const dv = new DataView(msg.buffer);
+      dv.setUint32(len + padLen,     (len * 8) >>> 0,                    true);
+      dv.setUint32(len + padLen + 4, Math.floor(len / 0x20000000) >>> 0, true);
+
+      // T[i] = floor(abs(sin(i+1)) * 2^32) for i = 0..63
+      const TC = [
+        0xd76aa478,0xe8c7b756,0x242070db,0xc1bdceee,0xf57c0faf,0x4787c62a,0xa8304613,0xfd469501,
+        0x698098d8,0x8b44f7af,0xffff5bb1,0x895cd7be,0x6b901122,0xfd987193,0xa679438e,0x49b40821,
+        0xf61e2562,0xc040b340,0x265e5a51,0xe9b6c7aa,0xd62f105d,0x02441453,0xd8a1e681,0xe7d3fbc8,
+        0x21e1cde6,0xc33707d6,0xf4d50d87,0x455a14ed,0xa9e3e905,0xfcefa3f8,0x676f02d9,0x8d2a4c8a,
+        0xfffa3942,0x8771f681,0x6d9d6122,0xfde5380c,0xa4beea44,0x4bdecfa9,0xf6bb4b60,0xbebfbc70,
+        0x289b7ec6,0xeaa127fa,0xd4ef3085,0x04881d05,0xd9d4d039,0xe6db99e5,0x1fa27cf8,0xc4ac5665,
+        0xf4292244,0x432aff97,0xab9423a7,0xfc93a039,0x655b59c3,0x8f0ccc92,0xffeff47d,0x85845dd1,
+        0x6fa87e4f,0xfe2ce6e0,0xa3014314,0x4e0811a1,0xf7537e82,0xbd3af235,0x2ad7d2bb,0xeb86d391,
+      ];
+      // Left-rotation amounts per round (7,12,17,22 / 5,9,14,20 / 4,11,16,23 / 6,10,15,21)
+      const SH = [
+        7,12,17,22, 7,12,17,22, 7,12,17,22, 7,12,17,22,
+        5, 9,14,20, 5, 9,14,20, 5, 9,14,20, 5, 9,14,20,
+        4,11,16,23, 4,11,16,23, 4,11,16,23, 4,11,16,23,
+        6,10,15,21, 6,10,15,21, 6,10,15,21, 6,10,15,21,
+      ];
+
+      let a = 0x67452301, b = 0xefcdab89, c = 0x98badcfe, d = 0x10325476;
+
+      for (let i = 0; i < msg.length; i += 64) {
+        const M: number[] = [];
+        for (let j = 0; j < 16; j++) M[j] = dv.getInt32(i + j * 4, true);
+        let aa = a, bb = b, cc = c, dd = d;
+
+        for (let j = 0; j < 64; j++) {
+          let f: number, g: number;
+          if      (j < 16) { f = F(bb, cc, dd); g = j; }
+          else if (j < 32) { f = G(bb, cc, dd); g = (5 * j + 1) % 16; }
+          else if (j < 48) { f = H(bb, cc, dd); g = (3 * j + 5) % 16; }
+          else             { f = I(bb, cc, dd); g = (7 * j)     % 16; }
+          const tmp = dd; dd = cc; cc = bb;
+          bb = add(bb, rol(add(add(aa, f), add(M[g], TC[j])), SH[j]));
+          aa = tmp;
+        }
+        a = add(a, aa); b = add(b, bb); c = add(c, cc); d = add(d, dd);
+      }
+
+      const out = new Uint8Array(16);
+      const rv  = new DataView(out.buffer);
+      rv.setInt32(0,  a, true); rv.setInt32(4,  b, true);
+      rv.setInt32(8,  c, true); rv.setInt32(12, d, true);
+      return out;
     }
 
-    async function run() {
-      const text = inEl.value;
-      for (const a of algos) {
-        const el = document.getElementById(`h-${a}`)!;
-        el.textContent = text ? await digestHex(a, text) : '—';
+    /* ------------------------------------------------------------------ */
+    /*  Encode helpers                                                      */
+    /* ------------------------------------------------------------------ */
+    function bytesToHex(b: Uint8Array): string {
+      return Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+    }
+
+    function bytesToB64(b: Uint8Array): string {
+      let s = '';
+      for (const byte of b) s += String.fromCharCode(byte);
+      return btoa(s);
+    }
+
+    function fmtFileSize(n: number): string {
+      if (n < 1024)       return `${n} B`;
+      if (n < 1048576)    return `${(n / 1024).toFixed(1)} KB`;
+      if (n < 1073741824) return `${(n / 1048576).toFixed(2)} MB`;
+      return `${(n / 1073741824).toFixed(2)} GB`;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Hash computation                                                    */
+    /* ------------------------------------------------------------------ */
+    async function computeHash(data: Uint8Array): Promise<string> {
+      let bytes: Uint8Array;
+      if (algo === 'MD5') {
+        bytes = md5(data);
+      } else {
+        const buf = await crypto.subtle.digest(algo, data.buffer);
+        bytes = new Uint8Array(buf);
+      }
+      return fmt === 'hex' ? bytesToHex(bytes) : bytesToB64(bytes);
+    }
+
+    async function update() {
+      errMsg.textContent = '';
+      errMsg.classList.add('hidden');
+
+      let data: Uint8Array;
+      if (mode === 'text') {
+        const val = textInput.value;
+        if (!val) { hashOut.textContent = ''; return; }
+        data = new TextEncoder().encode(val);
+      } else {
+        if (!fileBytes) { hashOut.textContent = ''; return; }
+        data = fileBytes;
+      }
+
+      try {
+        hashOut.textContent = await computeHash(data);
+      } catch (e) {
+        hashOut.textContent = '';
+        errMsg.textContent = String(e);
+        errMsg.classList.remove('hidden');
       }
     }
 
-    inEl.addEventListener('input', run);
-    document.querySelectorAll<HTMLButtonElement>('.hash-copy').forEach((b) =>
-      b.addEventListener('click', async () => {
-        const el = document.getElementById(`h-${b.dataset.algo}`)!;
-        await navigator.clipboard.writeText(el.textContent || '');
-        b.textContent = TXT.copied;
-        setTimeout(() => (b.textContent = TXT.copy), 1200);
-      })
-    );
-    run();
+    /* ------------------------------------------------------------------ */
+    /*  Tab active-state helper                                             */
+    /* ------------------------------------------------------------------ */
+    function applyTabActive(btn: Element, active: boolean) {
+      btn.classList.toggle('bg-white',             active);
+      btn.classList.toggle('dark:bg-zinc-800',     active);
+      btn.classList.toggle('text-violet-600',      active);
+      btn.classList.toggle('dark:text-violet-400', active);
+      btn.classList.toggle('shadow-sm',            active);
+      btn.classList.toggle('text-zinc-500',        !active);
+      btn.classList.toggle('dark:text-zinc-400',   !active);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Mode switching                                                      */
+    /* ------------------------------------------------------------------ */
+    function setMode(m: Mode) {
+      mode = m;
+      panelText.classList.toggle('hidden', m !== 'text');
+      panelFile.classList.toggle('hidden', m !== 'file');
+      applyTabActive(tabText, m === 'text');
+      applyTabActive(tabFile, m === 'file');
+      update();
+    }
+
+    tabText.addEventListener('click', () => setMode('text'));
+    tabFile.addEventListener('click', () => setMode('file'));
+
+    /* ------------------------------------------------------------------ */
+    /*  Algorithm selection                                                 */
+    /* ------------------------------------------------------------------ */
+    function setAlgo(a: string) {
+      algo = a;
+      algoButtons.forEach(btn => {
+        const active = btn.dataset.algo === a;
+        btn.classList.toggle('border-violet-400',          active);
+        btn.classList.toggle('bg-violet-50',               active);
+        btn.classList.toggle('text-violet-700',            active);
+        btn.classList.toggle('dark:border-violet-500',     active);
+        btn.classList.toggle('dark:bg-violet-500/10',      active);
+        btn.classList.toggle('dark:text-violet-400',       active);
+        btn.classList.toggle('border-zinc-200',            !active);
+        btn.classList.toggle('dark:border-zinc-700',       !active);
+        btn.classList.toggle('text-zinc-600',              !active);
+        btn.classList.toggle('dark:text-zinc-400',         !active);
+        btn.classList.toggle('hover:border-zinc-300',      !active);
+        btn.classList.toggle('hover:text-zinc-900',        !active);
+        btn.classList.toggle('dark:hover:border-zinc-600', !active);
+      });
+      update();
+    }
+
+    algoButtons.forEach(b => b.addEventListener('click', () => setAlgo(b.dataset.algo!)));
+
+    /* ------------------------------------------------------------------ */
+    /*  Output format selection                                             */
+    /* ------------------------------------------------------------------ */
+    function setFmt(f: Fmt) {
+      fmt = f;
+      applyTabActive(fmtHex, f === 'hex');
+      applyTabActive(fmtB64, f === 'b64');
+      update();
+    }
+
+    fmtHex.addEventListener('click', () => setFmt('hex'));
+    fmtB64.addEventListener('click', () => setFmt('b64'));
+
+    /* ------------------------------------------------------------------ */
+    /*  File handling                                                       */
+    /* ------------------------------------------------------------------ */
+    function handleFile(file: File) {
+      fileNameEl.textContent = file.name;
+      fileSizeEl.textContent = fmtFileSize(file.size);
+      fileInfo.classList.remove('hidden');
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        fileBytes = new Uint8Array(e.target!.result as ArrayBuffer);
+        update();
+      };
+      reader.onerror = () => {
+        errMsg.textContent = T.errRead;
+        errMsg.classList.remove('hidden');
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+    });
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files?.[0];
+      if (f) handleFile(f);
+    });
+
+    dropZone.addEventListener('dragover', (e: DragEvent) => {
+      e.preventDefault();
+      dropZone.classList.add('border-violet-400', 'dark:border-violet-500', 'bg-violet-50/40', 'dark:bg-violet-500/5');
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('border-violet-400', 'dark:border-violet-500', 'bg-violet-50/40', 'dark:bg-violet-500/5');
+    });
+    dropZone.addEventListener('drop', (e: DragEvent) => {
+      e.preventDefault();
+      dropZone.classList.remove('border-violet-400', 'dark:border-violet-500', 'bg-violet-50/40', 'dark:bg-violet-500/5');
+      const file = e.dataTransfer?.files[0];
+      if (file) { setMode('file'); handleFile(file); }
+    });
+
+    /* ------------------------------------------------------------------ */
+    /*  Copy                                                                */
+    /* ------------------------------------------------------------------ */
+    let copyTimer: ReturnType<typeof setTimeout> | null = null;
+
+    copyBtn.addEventListener('click', async () => {
+      const text = hashOut.textContent;
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = T.copied;
+        if (copyTimer) clearTimeout(copyTimer);
+        copyTimer = setTimeout(() => { copyBtn.textContent = T.copy; }, 2000);
+      } catch { /* clipboard access denied */ }
+    });
+
+    /* ------------------------------------------------------------------ */
+    /*  Init                                                                */
+    /* ------------------------------------------------------------------ */
+    textInput.addEventListener('input', update);
+
+    setMode('text');
+    setAlgo('SHA-256');
+    setFmt('hex');
   </script>
 </ToolPageLayout>

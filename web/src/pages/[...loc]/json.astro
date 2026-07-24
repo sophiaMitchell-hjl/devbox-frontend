@@ -7,136 +7,414 @@ const lang = langOfParam(Astro.params.loc);
 
 const copy = {
   zh: {
-    title: 'JSON 格式化 / 校验 - 在线美化、压缩与排序 | DevBox',
-    description:
-      '在线 JSON 格式化工具:一键美化、压缩、校验 JSON,可按键名排序,语法错误精准提示。浏览器本地处理,可用于校验 AI 生成的 JSON。',
+    title: 'JSON 格式化 / 路径查询 | DevBox',
+    description: '在线 JSON 格式化、压缩、验证工具，支持 JSONPath 路径查询，实时高亮错误行列号。',
+    inputLabel: 'JSON 输入',
+    inputPlaceholder: '在此粘贴 JSON…',
+    formatBtn: '格式化',
+    compactBtn: '压缩',
+    clearBtn: '清空',
+    outputLabel: '输出结果',
+    copyOutput: '复制',
+    copied: '已复制',
+    linesLabel: '行',
+    bytesLabel: '字节',
+    validJson: '有效 JSON',
+    invalidJson: '无效 JSON',
+    queryLabel: 'JSONPath 查询',
+    queryPlaceholder: '例如：user.name 或 items[0].id 或 items[*].name',
+    queryRun: '查询',
+    queryResultLabel: '查询结果',
+    copyResult: '复制结果',
+    noResult: '无匹配结果',
+    queryError: '查询出错',
     faqs: [
       {
-        q: 'JSON 报错怎么定位?',
-        a: '点"校验/格式化"后,若有语法错误会显示错误信息(通常包含出错位置)。常见问题是多了逗号、少了引号、用了单引号或注释——标准 JSON 都不允许。',
+        q: 'JSONPath 查询支持哪些语法？',
+        a: '支持点号路径（user.name）、方括号索引（items[0]）、通配符（items[*].id）。根节点可省略 $ 前缀，直接写路径即可。',
+      },
+      {
+        q: '格式化后的 JSON 会上传到服务器吗？',
+        a: '不会。所有处理均在浏览器本地完成，您的数据不会离开设备。',
       },
     ],
-    pretty: '格式化',
-    min: '压缩',
-    sort: '排序键名',
-    upload: '上传 JSON 文件',
-    copyResult: '复制结果',
-    inputLabel: '输入',
-    outputLabel: '输出',
-    inPlaceholder: '示例输入:{"a":1,"b":[2,3]}',
-    outPlaceholder: '示例输出:{ "a": 1, "b": [2, 3] }',
   },
   en: {
-    title: 'JSON Formatter / Validator - Beautify, Minify & Sort Online | DevBox',
-    description:
-      'Online JSON formatter: beautify, minify and validate JSON in one click, sort by key, with precise syntax-error hints. Processed locally in your browser — great for validating AI-generated JSON.',
+    title: 'JSON Formatter / Path Query | DevBox',
+    description: 'Format, minify, and validate JSON online. Supports JSONPath dot-notation queries with real-time error highlighting.',
+    inputLabel: 'JSON Input',
+    inputPlaceholder: 'Paste your JSON here…',
+    formatBtn: 'Format',
+    compactBtn: 'Compact',
+    clearBtn: 'Clear',
+    outputLabel: 'Output',
+    copyOutput: 'Copy',
+    copied: 'Copied',
+    linesLabel: 'lines',
+    bytesLabel: 'bytes',
+    validJson: 'Valid JSON',
+    invalidJson: 'Invalid JSON',
+    queryLabel: 'JSONPath Query',
+    queryPlaceholder: 'e.g. user.name or items[0].id or items[*].name',
+    queryRun: 'Query',
+    queryResultLabel: 'Query Result',
+    copyResult: 'Copy Result',
+    noResult: 'No results',
+    queryError: 'Query error',
     faqs: [
       {
-        q: 'How do I locate a JSON error?',
-        a: 'After clicking Format, any syntax error is shown with a message (usually including the position). Common causes are trailing commas, missing quotes, single quotes or comments — none of which standard JSON allows.',
+        q: 'What JSONPath syntax is supported?',
+        a: 'Dot notation (user.name), bracket index (items[0]), and wildcard (items[*].id) are all supported. The root $ prefix is optional.',
+      },
+      {
+        q: 'Is my JSON sent to a server?',
+        a: 'No. All processing happens entirely in your browser. Your data never leaves your device.',
       },
     ],
-    pretty: 'Format',
-    min: 'Minify',
-    sort: 'Sort keys',
-    upload: 'Upload JSON file',
-    copyResult: 'Copy result',
-    inputLabel: 'Input',
-    outputLabel: 'Output',
-    inPlaceholder: 'Example input: {"a":1,"b":[2,3]}',
-    outPlaceholder: 'Example output: { "a": 1, "b": [2, 3] }',
   },
 }[lang];
-
-const areaCls =
-  'w-full h-96 rounded-xl border border-zinc-300 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
 ---
 
 <ToolPageLayout slug="json" title={copy.title} description={copy.description} faqs={copy.faqs}>
-  <div class="mb-4 flex flex-wrap items-center gap-2">
-    <button data-act="pretty" class="act-btn rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">{copy.pretty}</button>
-    <button data-act="min" class="act-btn rounded-lg border border-zinc-300 px-4 py-1.5 text-sm text-zinc-700 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-200">{copy.min}</button>
-    <button data-act="sort" class="act-btn rounded-lg border border-zinc-300 px-4 py-1.5 text-sm text-zinc-700 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-200">{copy.sort}</button>
-    <label class="cursor-pointer rounded-lg border border-zinc-300 px-4 py-1.5 text-sm text-zinc-700 hover:border-zinc-400 dark:border-zinc-700 dark:text-zinc-200">
-      {copy.upload}
-      <input id="file" type="file" accept=".json,application/json,.txt" class="hidden" />
-    </label>
-    <button id="copy" type="button" class="ml-auto text-xs font-medium text-violet-600 dark:text-violet-400">{copy.copyResult}</button>
+
+  <!-- Validation status bar -->
+  <div id="status-bar" class="mb-4 flex items-center gap-3 min-h-[28px]">
+    <span id="status-badge" class="hidden"></span>
+    <span id="status-msg" class="text-sm text-zinc-500 dark:text-zinc-400"></span>
   </div>
 
-  <div class="grid gap-4 md:grid-cols-2">
-    <div>
-      <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.inputLabel}</label>
-      <textarea id="in" class={areaCls} data-clear-target="out" placeholder={copy.inPlaceholder} spellcheck="false"></textarea>
+  <!-- Input card -->
+  <div class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900 mb-4">
+    <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
+      <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.inputLabel}</span>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span id="input-bytes" class="text-sm text-zinc-500 dark:text-zinc-400">0 {copy.bytesLabel}</span>
+        <button id="btn-format" class="rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 transition-colors">{copy.formatBtn}</button>
+        <button id="btn-compact" class="rounded-lg border border-zinc-300 bg-white px-4 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 transition-colors">{copy.compactBtn}</button>
+        <button id="btn-clear" class="rounded-lg border border-zinc-300 bg-white px-4 py-1.5 text-sm font-medium text-zinc-500 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 transition-colors">{copy.clearBtn}</button>
+      </div>
     </div>
-    <div>
-      <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.outputLabel}</label>
-      <textarea id="out" class={areaCls} readonly placeholder={copy.outPlaceholder}></textarea>
-    </div>
+    <textarea
+      id="json-input"
+      rows="12"
+      spellcheck="false"
+      placeholder={copy.inputPlaceholder}
+      class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white resize-y placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+    ></textarea>
   </div>
-  <p id="msg" class="mt-3 text-sm"></p>
 
-  <script>
-    const L = document.documentElement.dataset.lang === 'en' ? 'en' : 'zh';
-    const inEl = document.getElementById('in') as HTMLTextAreaElement;
-    const outEl = document.getElementById('out') as HTMLTextAreaElement;
-    const msg = document.getElementById('msg')!;
+  <!-- Output card -->
+  <div class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900 mb-4">
+    <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
+      <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.outputLabel}</span>
+      <div class="flex items-center gap-2 flex-wrap">
+        <span id="output-meta" class="text-sm text-zinc-500 dark:text-zinc-400"></span>
+        <button id="btn-copy-output" class="rounded-lg border border-zinc-300 bg-white px-4 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 transition-colors">{copy.copyOutput}</button>
+      </div>
+    </div>
+    <textarea
+      id="json-output"
+      rows="12"
+      readonly
+      spellcheck="false"
+      class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white resize-y"
+    ></textarea>
+  </div>
 
-    function sortKeys(v: any): any {
-      if (Array.isArray(v)) return v.map(sortKeys);
-      if (v && typeof v === 'object') {
-        return Object.keys(v)
-          .sort()
-          .reduce((acc: any, k) => {
-            acc[k] = sortKeys(v[k]);
-            return acc;
-          }, {});
-      }
-      return v;
+  <!-- JSONPath query card -->
+  <div class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <div class="mb-3">
+      <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.queryLabel}</span>
+    </div>
+    <div class="flex gap-2 mb-4">
+      <input
+        id="query-input"
+        type="text"
+        placeholder={copy.queryPlaceholder}
+        class="flex-1 rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600"
+      />
+      <button id="btn-query" class="rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 transition-colors whitespace-nowrap">{copy.queryRun}</button>
+    </div>
+
+    <div id="query-result-wrap" class="hidden">
+      <div class="flex items-center justify-between mb-2 gap-2">
+        <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.queryResultLabel}</span>
+        <button id="btn-copy-result" class="rounded-lg border border-zinc-300 bg-white px-4 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 transition-colors">{copy.copyResult}</button>
+      </div>
+      <textarea
+        id="query-output"
+        rows="6"
+        readonly
+        spellcheck="false"
+        class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 outline-none dark:border-zinc-700 dark:bg-zinc-950 dark:text-white resize-y"
+      ></textarea>
+    </div>
+
+    <div id="query-error-wrap" class="hidden rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-500/5 dark:text-red-300"></div>
+  </div>
+
+  <script define:vars={{ copy }}>
+    // ── helpers ──────────────────────────────────────────────────────────────
+
+    function byteLen(str) {
+      return new TextEncoder().encode(str).length;
     }
 
-    function run(act: string) {
-      const raw = inEl.value.trim();
-      if (!raw) {
-        outEl.value = '';
-        msg.textContent = '';
-        return;
+    function fmt(bytes) {
+      if (bytes < 1024) return bytes + ' ' + copy.bytesLabel;
+      return (bytes / 1024).toFixed(1) + ' KB';
+    }
+
+    // ── DOM refs ─────────────────────────────────────────────────────────────
+
+    const inputEl      = /** @type {HTMLTextAreaElement} */ (document.getElementById('json-input'));
+    const outputEl     = /** @type {HTMLTextAreaElement} */ (document.getElementById('json-output'));
+    const statusBadge  = document.getElementById('status-badge');
+    const statusMsg    = document.getElementById('status-msg');
+    const inputBytes   = document.getElementById('input-bytes');
+    const outputMeta   = document.getElementById('output-meta');
+    const queryInput   = /** @type {HTMLInputElement} */ (document.getElementById('query-input'));
+    const queryResultW = document.getElementById('query-result-wrap');
+    const queryOutputEl= /** @type {HTMLTextAreaElement} */ (document.getElementById('query-output'));
+    const queryErrorW  = document.getElementById('query-error-wrap');
+
+    // ── validation ────────────────────────────────────────────────────────────
+
+    let parsedJson = null;
+
+    function tryParse(text) {
+      if (!text.trim()) {
+        parsedJson = null;
+        setStatus(null);
+        return null;
       }
-      let obj: any;
       try {
-        obj = JSON.parse(raw);
+        parsedJson = JSON.parse(text);
+        setStatus(true);
+        return parsedJson;
       } catch (e) {
-        outEl.value = '';
-        msg.className = 'mt-3 text-sm text-red-500';
-        msg.textContent = (L === 'en' ? '❌ Invalid JSON: ' : '❌ 无效 JSON:') + (e as Error).message;
-        return;
+        parsedJson = null;
+        // Extract line/col from error message where possible
+        const msg = e.message || String(e);
+        setStatus(false, msg);
+        return null;
       }
-      if (act === 'sort') obj = sortKeys(obj);
-      outEl.value = act === 'min' ? JSON.stringify(obj) : JSON.stringify(obj, null, 2);
-      msg.className = 'mt-3 text-sm text-emerald-600 dark:text-emerald-400';
-      msg.textContent = L === 'en' ? '✓ Valid JSON' : '✓ JSON 合法';
     }
 
-    document.querySelectorAll<HTMLButtonElement>('.act-btn').forEach((b) =>
-      b.addEventListener('click', () => run(b.dataset.act!))
-    );
-    inEl.addEventListener('input', () => run('pretty'));
+    function setStatus(valid, errMsg) {
+      if (valid === null) {
+        statusBadge.className = 'hidden';
+        statusBadge.textContent = '';
+        statusMsg.textContent = '';
+        return;
+      }
+      if (valid === true) {
+        statusBadge.className = 'rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400';
+        statusBadge.textContent = copy.validJson;
+        statusMsg.textContent = '';
+      } else {
+        statusBadge.className = 'rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700 dark:bg-red-500/10 dark:text-red-400';
+        statusBadge.textContent = copy.invalidJson;
+        statusMsg.textContent = errMsg || '';
+      }
+    }
 
-    // 上传 JSON 文件
-    const fileEl = document.getElementById('file') as HTMLInputElement;
-    fileEl.addEventListener('change', () => {
-      const f = fileEl.files?.[0];
-      if (!f) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        inEl.value = String(reader.result ?? '');
-        run('pretty');
-      };
-      reader.readAsText(f);
-      fileEl.value = ''; // 允许再次选同一文件
+    // ── format / compact ──────────────────────────────────────────────────────
+
+    function setOutput(text) {
+      outputEl.value = text;
+      const lines = text ? text.split('\n').length : 0;
+      const b = byteLen(text);
+      outputMeta.textContent = lines
+        ? lines + ' ' + copy.linesLabel + ' · ' + fmt(b)
+        : '';
+    }
+
+    function doFormat() {
+      const val = inputEl.value;
+      const parsed = tryParse(val);
+      if (parsed !== null) {
+        setOutput(JSON.stringify(parsed, null, 2));
+      } else {
+        setOutput('');
+      }
+    }
+
+    function doCompact() {
+      const val = inputEl.value;
+      const parsed = tryParse(val);
+      if (parsed !== null) {
+        setOutput(JSON.stringify(parsed));
+      } else {
+        setOutput('');
+      }
+    }
+
+    // ── real-time validation on input ────────────────────────────────────────
+
+    inputEl.addEventListener('input', () => {
+      const val = inputEl.value;
+      inputBytes.textContent = fmt(byteLen(val));
+      tryParse(val);
+      // clear output on input change to avoid stale data confusion
+      // but keep if output already tracks input
     });
-    document.getElementById('copy')!.addEventListener('click', async () => {
-      await navigator.clipboard.writeText(outEl.value);
+
+    document.getElementById('btn-format').addEventListener('click', doFormat);
+    document.getElementById('btn-compact').addEventListener('click', doCompact);
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      inputEl.value = '';
+      outputEl.value = '';
+      parsedJson = null;
+      setStatus(null);
+      inputBytes.textContent = '0 ' + copy.bytesLabel;
+      outputMeta.textContent = '';
+      queryResultW.classList.add('hidden');
+      queryErrorW.classList.add('hidden');
+    });
+
+    // ── copy buttons ─────────────────────────────────────────────────────────
+
+    function makeCopyHandler(btn, getTextFn) {
+      btn.addEventListener('click', () => {
+        const text = getTextFn();
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+          const orig = btn.textContent;
+          btn.textContent = copy.copied;
+          setTimeout(() => { btn.textContent = orig; }, 1500);
+        });
+      });
+    }
+
+    makeCopyHandler(document.getElementById('btn-copy-output'), () => outputEl.value);
+    makeCopyHandler(document.getElementById('btn-copy-result'), () => queryOutputEl.value);
+
+    // ── lightweight JSONPath evaluator ────────────────────────────────────────
+    // Supports:
+    //   dot notation:     user.name
+    //   bracket index:    items[0]
+    //   wildcard:         items[*].name
+    //   root $:           $.user.name  ($ is stripped)
+
+    function tokenizePath(path) {
+      // Strip optional root $
+      let p = path.trim();
+      if (p.startsWith('$')) p = p.slice(1);
+      if (p.startsWith('.')) p = p.slice(1);
+
+      // Split into tokens; each token is { key: string } or { index: number } or { wild: true }
+      const tokens = [];
+      // We'll parse char-by-char
+      let i = 0;
+      while (i < p.length) {
+        if (p[i] === '.') {
+          i++; // skip dot separator
+          continue;
+        }
+        if (p[i] === '[') {
+          // bracket notation
+          const close = p.indexOf(']', i);
+          if (close === -1) throw new Error('Unmatched [');
+          const inner = p.slice(i + 1, close).trim();
+          if (inner === '*') {
+            tokens.push({ wild: true });
+          } else if (/^\d+$/.test(inner)) {
+            tokens.push({ index: parseInt(inner, 10) });
+          } else {
+            // bracket key like ["foo"]
+            const key = inner.replace(/^['"]|['"]$/g, '');
+            tokens.push({ key });
+          }
+          i = close + 1;
+        } else {
+          // read until . or [
+          let j = i;
+          while (j < p.length && p[j] !== '.' && p[j] !== '[') j++;
+          const key = p.slice(i, j);
+          if (key === '*') {
+            tokens.push({ wild: true });
+          } else if (key) {
+            tokens.push({ key });
+          }
+          i = j;
+        }
+      }
+      return tokens;
+    }
+
+    function applyTokens(nodes, tokens) {
+      let current = nodes; // array of current candidate values
+      for (const tok of tokens) {
+        const next = [];
+        for (const node of current) {
+          if (tok.wild) {
+            // Return all values of object or array
+            if (Array.isArray(node)) {
+              next.push(...node);
+            } else if (node !== null && typeof node === 'object') {
+              next.push(...Object.values(node));
+            }
+          } else if ('index' in tok) {
+            if (Array.isArray(node) && tok.index >= 0 && tok.index < node.length) {
+              next.push(node[tok.index]);
+            }
+          } else if ('key' in tok) {
+            if (node !== null && typeof node === 'object' && !Array.isArray(node) && Object.prototype.hasOwnProperty.call(node, tok.key)) {
+              next.push(node[tok.key]);
+            }
+          }
+        }
+        current = next;
+      }
+      return current;
+    }
+
+    function jsonPathQuery(root, path) {
+      if (!path.trim()) throw new Error('Empty path');
+      const tokens = tokenizePath(path);
+      if (tokens.length === 0) {
+        // root itself
+        return [root];
+      }
+      return applyTokens([root], tokens);
+    }
+
+    // ── query button ─────────────────────────────────────────────────────────
+
+    function runQuery() {
+      queryResultW.classList.add('hidden');
+      queryErrorW.classList.add('hidden');
+
+      if (!parsedJson) {
+        queryErrorW.textContent = copy.invalidJson;
+        queryErrorW.classList.remove('hidden');
+        return;
+      }
+
+      const path = queryInput.value.trim();
+      if (!path) return;
+
+      try {
+        const results = jsonPathQuery(parsedJson, path);
+        if (results.length === 0) {
+          queryOutputEl.value = copy.noResult;
+        } else {
+          queryOutputEl.value = results.length === 1
+            ? JSON.stringify(results[0], null, 2)
+            : JSON.stringify(results, null, 2);
+        }
+        queryResultW.classList.remove('hidden');
+      } catch (e) {
+        queryErrorW.textContent = copy.queryError + ': ' + (e.message || String(e));
+        queryErrorW.classList.remove('hidden');
+      }
+    }
+
+    document.getElementById('btn-query').addEventListener('click', runQuery);
+    queryInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') runQuery();
     });
   </script>
+
 </ToolPageLayout>

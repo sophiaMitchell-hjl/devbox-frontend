@@ -7,153 +7,589 @@ const lang = langOfParam(Astro.params.loc);
 
 const copy = {
   zh: {
-    title: '颜色转换器 - HEX/RGB/HSL 互转与色阶生成 | DevBox',
-    description:
-      '在线颜色转换:HEX、RGB、HSL 格式互转,预览色块,并自动生成同色系深浅色阶。点击即复制,浏览器本地运行。',
-    shades: '深浅色阶(点击复制)',
+    title: '颜色工具 — HEX/RGB/HSL/OKLCH 转换 + WCAG 对比度 | DevBox',
+    description: '在线颜色格式转换工具，支持 HEX、RGB、HSL、OKLCH 互转，并内置 WCAG AA/AAA 对比度检查器。',
+    converterTitle: '颜色转换',
+    converterDesc: '输入任意格式，自动同步所有颜色表示。',
+    hexLabel: 'HEX',
+    rgbLabel: 'RGB',
+    hslLabel: 'HSL',
+    oklchLabel: 'OKLCH',
+    copyBtn: '复制',
+    copiedBtn: '已复制',
+    contrastTitle: 'WCAG 对比度检查',
+    contrastDesc: '检查前景色与背景色的对比度，满足无障碍标准。',
+    fgLabel: '前景色',
+    bgLabel: '背景色',
+    contrastRatioLabel: '对比度',
+    passLabel: '通过',
+    failLabel: '未通过',
+    aaNormalLabel: 'AA 普通文字 (≥4.5:1)',
+    aaLargeLabel: 'AA 大号文字 (≥3:1)',
+    aaaNormalLabel: 'AAA 普通文字 (≥7:1)',
+    aaaLargeLabel: 'AAA 大号文字 (≥4.5:1)',
+    previewLabel: '预览',
+    sampleText: '示例文字 Aa',
     faqs: [
       {
-        q: 'HEX、RGB、HSL 有什么区别?',
-        a: '它们只是同一颜色的不同写法:HEX 如 #ff0000 常用于 CSS;RGB 用红绿蓝三通道;HSL 用色相/饱和度/亮度,调深浅更直观。',
+        q: 'OKLCH 是什么，为什么比 HSL 更好？',
+        a: 'OKLCH 是基于人眼感知的颜色空间，L 表示感知亮度（0–1），C 表示色度（饱和度），H 表示色相角（0–360°）。与 HSL 不同，OKLCH 在改变色相时亮度保持一致，非常适合生成调色板和做无障碍设计。',
+      },
+      {
+        q: 'WCAG 对比度是如何计算的？',
+        a: 'WCAG 对比度 = (L1 + 0.05) / (L2 + 0.05)，其中 L1 是较亮颜色的相对亮度，L2 是较暗颜色的相对亮度。相对亮度通过将 sRGB 值线性化后加权求和得到：L = 0.2126R + 0.7152G + 0.0722B。AA 级普通文字要求对比度 ≥ 4.5:1，AAA 级要求 ≥ 7:1。',
       },
     ],
   },
   en: {
-    title: 'Color Converter - HEX/RGB/HSL Conversion & Tint Scale | DevBox',
-    description:
-      'Online color converter: convert between HEX, RGB and HSL, preview swatches, and auto-generate a tint/shade scale. Click to copy, runs locally in your browser.',
-    shades: 'Tint / shade scale (click to copy)',
+    title: 'Color Tools — HEX/RGB/HSL/OKLCH Converter + WCAG Contrast | DevBox',
+    description: 'Convert colors between HEX, RGB, HSL, and OKLCH formats instantly. Includes a WCAG AA/AAA contrast ratio checker for accessibility.',
+    converterTitle: 'Color Converter',
+    converterDesc: 'Edit any format and all others update in real time.',
+    hexLabel: 'HEX',
+    rgbLabel: 'RGB',
+    hslLabel: 'HSL',
+    oklchLabel: 'OKLCH',
+    copyBtn: 'Copy',
+    copiedBtn: 'Copied',
+    contrastTitle: 'WCAG Contrast Checker',
+    contrastDesc: 'Check foreground/background contrast ratio against accessibility standards.',
+    fgLabel: 'Foreground',
+    bgLabel: 'Background',
+    contrastRatioLabel: 'Contrast Ratio',
+    passLabel: 'Pass',
+    failLabel: 'Fail',
+    aaNormalLabel: 'AA Normal Text (≥4.5:1)',
+    aaLargeLabel: 'AA Large Text (≥3:1)',
+    aaaNormalLabel: 'AAA Normal Text (≥7:1)',
+    aaaLargeLabel: 'AAA Large Text (≥4.5:1)',
+    previewLabel: 'Preview',
+    sampleText: 'Sample Text Aa',
     faqs: [
       {
-        q: "What's the difference between HEX, RGB and HSL?",
-        a: "They're just different ways to write the same color: HEX like #ff0000 is common in CSS; RGB uses red/green/blue channels; HSL uses hue/saturation/lightness, which is more intuitive for adjusting shades.",
+        q: 'What is OKLCH and why is it better than HSL?',
+        a: 'OKLCH is a perceptually uniform color space where L is perceived lightness (0–1), C is chroma (saturation), and H is hue angle (0–360°). Unlike HSL, colors at the same L value in OKLCH have consistent perceived brightness across hues, making it ideal for building accessible palettes and design systems.',
+      },
+      {
+        q: 'How is WCAG contrast ratio calculated?',
+        a: 'WCAG contrast = (L1 + 0.05) / (L2 + 0.05), where L1 is the relative luminance of the lighter color and L2 of the darker. Relative luminance linearizes each sRGB channel then computes L = 0.2126R + 0.7152G + 0.0722B. AA requires ≥ 4.5:1 for normal text and ≥ 3:1 for large text; AAA requires ≥ 7:1 and ≥ 4.5:1 respectively.',
       },
     ],
   },
 }[lang];
-
-const inputCls =
-  'w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
 ---
 
 <ToolPageLayout slug="color" title={copy.title} description={copy.description} faqs={copy.faqs}>
-  <div class="grid gap-6 md:grid-cols-2">
-    <div class="space-y-4">
-      <div class="flex items-center gap-3">
-        <input id="picker" type="color" value="#6366f1" class="h-14 w-20 cursor-pointer rounded-lg border border-zinc-300 bg-transparent dark:border-zinc-700" />
-        <div id="swatch" class="h-14 flex-1 rounded-lg border border-zinc-200 dark:border-zinc-800"></div>
+
+  <!-- ═══════════════════════════ SECTION 1: COLOR CONVERTER ═══════════════════════════ -->
+  <div class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <h2 class="mb-1 text-base font-semibold text-zinc-900 dark:text-white" data-copy="converterTitle">{copy.converterTitle}</h2>
+    <p class="mb-5 text-sm text-zinc-500 dark:text-zinc-400" data-copy="converterDesc">{copy.converterDesc}</p>
+
+    <!-- Swatch + native color picker -->
+    <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div
+        id="conv-swatch"
+        class="h-[200px] w-full flex-1 rounded-xl border border-zinc-200 dark:border-zinc-700"
+        style="background:#6d28d9"
+      ></div>
+      <div class="flex flex-col items-center gap-2">
+        <label class="text-sm font-medium text-zinc-700 dark:text-zinc-300" for="conv-native-picker">Picker</label>
+        <input
+          id="conv-native-picker"
+          type="color"
+          value="#6d28d9"
+          class="h-14 w-14 cursor-pointer rounded-xl border-2 border-zinc-300 bg-transparent p-0.5 dark:border-zinc-600"
+        />
       </div>
-      <div>
-        <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">HEX</label>
-        <input id="hex" type="text" value="#6366f1" class={inputCls} />
-      </div>
-      <div id="out" class="space-y-2 text-sm"></div>
     </div>
 
+    <!-- Four format rows -->
+    <div class="grid gap-3" id="conv-fields">
+
+      <!-- HEX -->
+      <div class="flex items-center gap-3">
+        <span class="w-16 shrink-0 text-sm font-medium text-zinc-700 dark:text-zinc-300" data-copy="hexLabel">{copy.hexLabel}</span>
+        <input
+          id="conv-hex"
+          type="text"
+          spellcheck="false"
+          maxlength="7"
+          class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+          value="#6d28d9"
+        />
+        <button
+          data-copy-target="conv-hex"
+          class="conv-copy-btn shrink-0 rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+          data-label-copy={copy.copyBtn}
+          data-label-copied={copy.copiedBtn}
+        >{copy.copyBtn}</button>
+      </div>
+
+      <!-- RGB -->
+      <div class="flex items-center gap-3">
+        <span class="w-16 shrink-0 text-sm font-medium text-zinc-700 dark:text-zinc-300" data-copy="rgbLabel">{copy.rgbLabel}</span>
+        <input
+          id="conv-rgb"
+          type="text"
+          spellcheck="false"
+          class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+          value="109, 40, 217"
+        />
+        <button
+          data-copy-target="conv-rgb"
+          class="conv-copy-btn shrink-0 rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+          data-label-copy={copy.copyBtn}
+          data-label-copied={copy.copiedBtn}
+        >{copy.copyBtn}</button>
+      </div>
+
+      <!-- HSL -->
+      <div class="flex items-center gap-3">
+        <span class="w-16 shrink-0 text-sm font-medium text-zinc-700 dark:text-zinc-300" data-copy="hslLabel">{copy.hslLabel}</span>
+        <input
+          id="conv-hsl"
+          type="text"
+          spellcheck="false"
+          class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+        />
+        <button
+          data-copy-target="conv-hsl"
+          class="conv-copy-btn shrink-0 rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+          data-label-copy={copy.copyBtn}
+          data-label-copied={copy.copiedBtn}
+        >{copy.copyBtn}</button>
+      </div>
+
+      <!-- OKLCH -->
+      <div class="flex items-center gap-3">
+        <span class="w-16 shrink-0 text-sm font-medium text-zinc-700 dark:text-zinc-300" data-copy="oklchLabel">{copy.oklchLabel}</span>
+        <input
+          id="conv-oklch"
+          type="text"
+          spellcheck="false"
+          class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+        />
+        <button
+          data-copy-target="conv-oklch"
+          class="conv-copy-btn shrink-0 rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+          data-label-copy={copy.copyBtn}
+          data-label-copied={copy.copiedBtn}
+        >{copy.copyBtn}</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ SECTION 2: WCAG CONTRAST CHECKER ═══════════════════════════ -->
+  <div class="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <h2 class="mb-1 text-base font-semibold text-zinc-900 dark:text-white" data-copy="contrastTitle">{copy.contrastTitle}</h2>
+    <p class="mb-5 text-sm text-zinc-500 dark:text-zinc-400" data-copy="contrastDesc">{copy.contrastDesc}</p>
+
+    <!-- FG + BG inputs -->
+    <div class="mb-5 grid gap-4 sm:grid-cols-2">
+
+      <!-- Foreground -->
+      <div>
+        <label class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300" for="ct-fg" data-copy="fgLabel">{copy.fgLabel}</label>
+        <div class="flex items-center gap-2">
+          <input id="ct-fg-picker" type="color" value="#ffffff"
+            class="h-10 w-10 shrink-0 cursor-pointer rounded-lg border-2 border-zinc-300 bg-transparent p-0.5 dark:border-zinc-600" />
+          <input id="ct-fg" type="text" spellcheck="false" value="#ffffff" maxlength="7"
+            class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+        </div>
+      </div>
+
+      <!-- Background -->
+      <div>
+        <label class="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300" for="ct-bg" data-copy="bgLabel">{copy.bgLabel}</label>
+        <div class="flex items-center gap-2">
+          <input id="ct-bg-picker" type="color" value="#1e1b4b"
+            class="h-10 w-10 shrink-0 cursor-pointer rounded-lg border-2 border-zinc-300 bg-transparent p-0.5 dark:border-zinc-600" />
+          <input id="ct-bg" type="text" spellcheck="false" value="#1e1b4b" maxlength="7"
+            class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-2.5 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Ratio + grades row -->
+    <div class="mb-5 flex flex-wrap items-start gap-5">
+
+      <!-- Ratio -->
+      <div>
+        <p class="mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300" data-copy="contrastRatioLabel">{copy.contrastRatioLabel}</p>
+        <p id="ct-ratio" class="text-3xl font-bold text-violet-600 dark:text-violet-400">—</p>
+      </div>
+
+      <!-- Grades -->
+      <div class="flex-1">
+        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2" id="ct-grades">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Live preview -->
     <div>
-      <p class="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.shades}</p>
-      <div id="shades" class="grid grid-cols-5 gap-2"></div>
+      <p class="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300" data-copy="previewLabel">{copy.previewLabel}</p>
+      <div
+        id="ct-preview"
+        class="flex items-center justify-center rounded-xl border border-zinc-200 py-10 text-2xl font-semibold dark:border-zinc-700"
+        style="color:#ffffff; background:#1e1b4b"
+      >{copy.sampleText}</div>
     </div>
   </div>
 
   <script>
-    const L = document.documentElement.dataset.lang === 'en' ? 'en' : 'zh';
-    const TXT = {
-      copy: L === 'en' ? 'Copy' : '复制',
-      copied: L === 'en' ? 'Copied' : '已复制',
-    };
-    const picker = document.getElementById('picker') as HTMLInputElement;
-    const hexIn = document.getElementById('hex') as HTMLInputElement;
-    const swatch = document.getElementById('swatch')!;
-    const out = document.getElementById('out')!;
-    const shades = document.getElementById('shades')!;
+    // ══════════════════════════════════════════════════════════════════════════
+    // COLOUR CONVERSION UTILITIES
+    // ══════════════════════════════════════════════════════════════════════════
 
-    function hexToRgb(hex: string) {
-      const m = hex.replace('#', '');
-      if (!/^[0-9a-fA-F]{6}$/.test(m)) return null;
-      return { r: parseInt(m.slice(0, 2), 16), g: parseInt(m.slice(2, 4), 16), b: parseInt(m.slice(4, 6), 16) };
-    }
-    const toHex = (n: number) => Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, '0');
-    const rgbToHex = (r: number, g: number, b: number) => `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    // --- HEX ↔ RGB -----------------------------------------------------------
 
-    function rgbToHsl(r: number, g: number, b: number) {
-      r /= 255; g /= 255; b /= 255;
-      const max = Math.max(r, g, b), min = Math.min(r, g, b);
-      let h = 0, s = 0;
-      const l = (max + min) / 2;
-      if (max !== min) {
-        const d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
-        else if (max === g) h = (b - r) / d + 2;
-        else h = (r - g) / d + 4;
-        h /= 6;
+    function hexToRgb(hex: string): [number, number, number] | null {
+      const m = hex.trim().replace(/^#/, '');
+      if (m.length === 3) {
+        const r = parseInt(m[0] + m[0], 16);
+        const g = parseInt(m[1] + m[1], 16);
+        const b = parseInt(m[2] + m[2], 16);
+        return [r, g, b];
       }
-      return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
-    }
-    function hslToRgb(h: number, s: number, l: number) {
-      h /= 360; s /= 100; l /= 100;
-      if (s === 0) { const v = Math.round(l * 255); return { r: v, g: v, b: v }; }
-      const hue = (p: number, q: number, t: number) => {
-        if (t < 0) t += 1; if (t > 1) t -= 1;
-        if (t < 1 / 6) return p + (q - p) * 6 * t;
-        if (t < 1 / 2) return q;
-        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-        return p;
-      };
-      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      const p = 2 * l - q;
-      return { r: Math.round(hue(p, q, h + 1 / 3) * 255), g: Math.round(hue(p, q, h) * 255), b: Math.round(hue(p, q, h - 1 / 3) * 255) };
+      if (m.length === 6) {
+        const r = parseInt(m.slice(0, 2), 16);
+        const g = parseInt(m.slice(2, 4), 16);
+        const b = parseInt(m.slice(4, 6), 16);
+        return [r, g, b];
+      }
+      return null;
     }
 
-    function row(label: string, val: string) {
-      return `<div class="flex items-center justify-between gap-3"><span class="text-zinc-400">${label}</span><span class="flex items-center gap-2"><code class="font-mono text-zinc-800 dark:text-zinc-100">${val}</code><button class="copy-inline text-xs text-violet-500" data-val="${val}">${TXT.copy}</button></span></div>`;
+    function rgbToHex(r: number, g: number, b: number): string {
+      return '#' + [r, g, b].map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
     }
 
-    function update(hex: string) {
+    // --- RGB ↔ HSL -----------------------------------------------------------
+
+    function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+      const rn = r / 255, gn = g / 255, bn = b / 255;
+      const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn);
+      const l = (max + min) / 2;
+      if (max === min) return [0, 0, Math.round(l * 100)];
+      const d = max - min;
+      const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      let h: number;
+      switch (max) {
+        case rn: h = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6; break;
+        case gn: h = ((bn - rn) / d + 2) / 6; break;
+        default: h = ((rn - gn) / d + 4) / 6;
+      }
+      return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+    }
+
+    function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+      const sn = s / 100, ln = l / 100;
+      const c = (1 - Math.abs(2 * ln - 1)) * sn;
+      const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+      const m = ln - c / 2;
+      let r = 0, g = 0, b = 0;
+      if (h < 60)       { r = c; g = x; b = 0; }
+      else if (h < 120) { r = x; g = c; b = 0; }
+      else if (h < 180) { r = 0; g = c; b = x; }
+      else if (h < 240) { r = 0; g = x; b = c; }
+      else if (h < 300) { r = x; g = 0; b = c; }
+      else              { r = c; g = 0; b = x; }
+      return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
+    }
+
+    // --- RGB ↔ OKLCH (via linear sRGB → OKLAB → OKLCH) ---------------------
+    // Reference: https://bottosson.github.io/posts/oklab/
+
+    function linearize(v: number): number {
+      const c = v / 255;
+      return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    }
+
+    function rgbToOklch(r: number, g: number, b: number): [number, number, number] {
+      // sRGB → linear sRGB
+      const lr = linearize(r), lg = linearize(g), lb = linearize(b);
+
+      // linear sRGB → LMS (Oklab M1)
+      const l_ = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
+      const m_ = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
+      const s_ = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
+
+      // LMS → OKLAB (Oklab M2)
+      const L = 0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_;
+      const a = 1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_;
+      const bk = 0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_;
+
+      // OKLAB → OKLCH
+      const C = Math.sqrt(a * a + bk * bk);
+      let H = Math.atan2(bk, a) * (180 / Math.PI);
+      if (H < 0) H += 360;
+
+      return [
+        Math.round(L * 10000) / 10000,
+        Math.round(C * 10000) / 10000,
+        Math.round(H * 10) / 10,
+      ];
+    }
+
+    function oklchToRgb(L: number, C: number, H: number): [number, number, number] {
+      const hRad = H * (Math.PI / 180);
+      const a = C * Math.cos(hRad);
+      const bk = C * Math.sin(hRad);
+
+      // OKLAB → LMS
+      const l_ = L + 0.3963377774 * a + 0.2158037573 * bk;
+      const m_ = L - 0.1055613458 * a - 0.0638541728 * bk;
+      const s_ = L - 0.0894841775 * a - 1.2914855480 * bk;
+
+      const lc = l_ * l_ * l_;
+      const mc = m_ * m_ * m_;
+      const sc = s_ * s_ * s_;
+
+      // LMS → linear sRGB
+      const lr =  4.0767416621 * lc - 3.3077115913 * mc + 0.2309699292 * sc;
+      const lg = -1.2684380046 * lc + 2.6097574011 * mc - 0.3413193965 * sc;
+      const lb = -0.0041960863 * lc - 0.7034186147 * mc + 1.7076147010 * sc;
+
+      // linear sRGB → sRGB (gamma)
+      function unlinearize(v: number): number {
+        if (v <= 0) return 0;
+        if (v >= 1) return 255;
+        const g = v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+        return Math.round(Math.max(0, Math.min(1, g)) * 255);
+      }
+
+      return [unlinearize(lr), unlinearize(lg), unlinearize(lb)];
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // SECTION 1 — CONVERTER
+    // ══════════════════════════════════════════════════════════════════════════
+
+    const swatch = document.getElementById('conv-swatch') as HTMLDivElement;
+    const picker = document.getElementById('conv-native-picker') as HTMLInputElement;
+    const hexInput  = document.getElementById('conv-hex')   as HTMLInputElement;
+    const rgbInput  = document.getElementById('conv-rgb')   as HTMLInputElement;
+    const hslInput  = document.getElementById('conv-hsl')   as HTMLInputElement;
+    const oklchInput = document.getElementById('conv-oklch') as HTMLInputElement;
+
+    // Set all outputs from an RGB triple (source input is skipped to keep cursor)
+    function setAllFromRgb(r: number, g: number, b: number, skipId: string | null) {
+      const hex = rgbToHex(r, g, b);
+      const [h, s, l] = rgbToHsl(r, g, b);
+      const [ok_l, ok_c, ok_h] = rgbToOklch(r, g, b);
+
+      if (skipId !== 'conv-hex')   hexInput.value   = hex;
+      if (skipId !== 'conv-rgb')   rgbInput.value   = `${r}, ${g}, ${b}`;
+      if (skipId !== 'conv-hsl')   hslInput.value   = `${h}°, ${s}%, ${l}%`;
+      if (skipId !== 'conv-oklch') oklchInput.value = `${ok_l}, ${ok_c}, ${ok_h}`;
+
+      swatch.style.background = hex;
+      picker.value = hex;
+    }
+
+    // Parse helpers
+    function parseRgbInput(s: string): [number, number, number] | null {
+      const parts = s.replace(/[^\d.,]/g, '').split(',').map(v => parseFloat(v.trim()));
+      if (parts.length < 3 || parts.some(isNaN)) return null;
+      const [r, g, b] = parts;
+      if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) return null;
+      return [Math.round(r), Math.round(g), Math.round(b)];
+    }
+
+    function parseHslInput(s: string): [number, number, number] | null {
+      const parts = s.replace(/[^\d.,]/g, '').split(',').map(v => parseFloat(v.trim()));
+      if (parts.length < 3 || parts.some(isNaN)) return null;
+      const [h, sat, l] = parts;
+      if (h < 0 || h > 360 || sat < 0 || sat > 100 || l < 0 || l > 100) return null;
+      return [h, sat, l];
+    }
+
+    function parseOklchInput(s: string): [number, number, number] | null {
+      const parts = s.replace(/[^\d.,\-]/g, '').split(',').map(v => parseFloat(v.trim()));
+      if (parts.length < 3 || parts.some(isNaN)) return null;
+      const [L, C, H] = parts;
+      if (L < 0 || L > 1 || C < 0 || C > 0.5 || H < 0 || H > 360) return null;
+      return [L, C, H];
+    }
+
+    // Input handlers
+    hexInput.addEventListener('input', () => {
+      const hex = hexInput.value.trim();
       const rgb = hexToRgb(hex);
       if (!rgb) return;
-      const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-      swatch.style.background = hex;
-      const hexStr = hex.toLowerCase();
-      const rgbStr = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
-      const hslStr = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
-      out.innerHTML = row('HEX', hexStr) + row('RGB', rgbStr) + row('HSL', hslStr);
-      // 色阶:固定 h/s,改变亮度
-      const steps = [90, 80, 70, 60, 50, 40, 30, 20, 15, 10];
-      shades.innerHTML = steps
-        .map((l) => {
-          const c = hslToRgb(hsl.h, hsl.s, l);
-          const h = rgbToHex(c.r, c.g, c.b);
-          return `<button class="copy-inline group flex flex-col items-center" data-val="${h}"><span class="h-10 w-full rounded-lg border border-zinc-200 dark:border-zinc-800" style="background:${h}"></span><span class="mt-1 font-mono text-[10px] text-zinc-400 group-hover:text-violet-500">${l}</span></button>`;
-        })
-        .join('');
-    }
+      setAllFromRgb(...rgb, 'conv-hex');
+    });
+
+    rgbInput.addEventListener('input', () => {
+      const rgb = parseRgbInput(rgbInput.value);
+      if (!rgb) return;
+      setAllFromRgb(...rgb, 'conv-rgb');
+    });
+
+    hslInput.addEventListener('input', () => {
+      const hsl = parseHslInput(hslInput.value);
+      if (!hsl) return;
+      const rgb = hslToRgb(...hsl);
+      setAllFromRgb(...rgb, 'conv-hsl');
+    });
+
+    oklchInput.addEventListener('input', () => {
+      const oklch = parseOklchInput(oklchInput.value);
+      if (!oklch) return;
+      const rgb = oklchToRgb(...oklch);
+      setAllFromRgb(...rgb, 'conv-oklch');
+    });
 
     picker.addEventListener('input', () => {
-      hexIn.value = picker.value;
-      update(picker.value);
-    });
-    hexIn.addEventListener('input', () => {
-      let v = hexIn.value.trim();
-      if (!v.startsWith('#')) v = '#' + v;
-      if (/^#[0-9a-fA-F]{6}$/.test(v)) {
-        picker.value = v;
-        update(v);
-      }
-    });
-    document.addEventListener('click', async (e) => {
-      const t = (e.target as HTMLElement).closest('.copy-inline') as HTMLElement | null;
-      if (!t) return;
-      await navigator.clipboard.writeText(t.dataset.val!);
-      const label = t.querySelector('.text-violet-500') || t;
-      const old = t.textContent;
-      if (t.classList.contains('text-xs')) {
-        t.textContent = TXT.copied;
-        setTimeout(() => (t.textContent = old), 1200);
-      }
+      const rgb = hexToRgb(picker.value);
+      if (!rgb) return;
+      setAllFromRgb(...rgb, null);
     });
 
-    update('#6366f1');
+    // Copy buttons
+    document.querySelectorAll<HTMLButtonElement>('.conv-copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.dataset.copyTarget!;
+        const inp = document.getElementById(targetId) as HTMLInputElement;
+        const labelCopy = btn.dataset.labelCopy ?? 'Copy';
+        const labelCopied = btn.dataset.labelCopied ?? 'Copied';
+        navigator.clipboard.writeText(inp.value).then(() => {
+          btn.textContent = labelCopied;
+          setTimeout(() => { btn.textContent = labelCopy; }, 1500);
+        });
+      });
+    });
+
+    // Initial sync on load
+    {
+      const rgb = hexToRgb('#6d28d9');
+      if (rgb) setAllFromRgb(...rgb, null);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // SECTION 2 — WCAG CONTRAST CHECKER
+    // ══════════════════════════════════════════════════════════════════════════
+
+    const ctFgPicker = document.getElementById('ct-fg-picker') as HTMLInputElement;
+    const ctBgPicker = document.getElementById('ct-bg-picker') as HTMLInputElement;
+    const ctFgInput  = document.getElementById('ct-fg')  as HTMLInputElement;
+    const ctBgInput  = document.getElementById('ct-bg')  as HTMLInputElement;
+    const ctRatio    = document.getElementById('ct-ratio')!;
+    const ctGrades   = document.getElementById('ct-grades')!;
+    const ctPreview  = document.getElementById('ct-preview')!;
+
+    // Labels injected from Astro copy (via data attributes on grades container)
+    // We read them from the DOM elements directly
+    const labelPass = ctGrades.closest('[data-pass-label]')?.getAttribute('data-pass-label')
+      ?? document.querySelector('[data-copy="passLabel"]')?.textContent
+      ?? 'Pass';
+    const labelFail = ctGrades.closest('[data-fail-label]')?.getAttribute('data-fail-label')
+      ?? document.querySelector('[data-copy="failLabel"]')?.textContent
+      ?? 'Fail';
+
+    // Labels for grade rows — read from rendered DOM
+    function getLabel(key: string): string {
+      return document.querySelector(`[data-copy="${key}"]`)?.textContent ?? key;
+    }
+
+    function relativeLuminance(r: number, g: number, b: number): number {
+      function linearize(v: number) {
+        const c = v / 255;
+        return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+      }
+      return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b);
+    }
+
+    function contrastRatio(l1: number, l2: number): number {
+      const lighter = Math.max(l1, l2);
+      const darker  = Math.min(l1, l2);
+      return (lighter + 0.05) / (darker + 0.05);
+    }
+
+    function buildGradeRow(label: string, threshold: number, ratio: number): HTMLDivElement {
+      const pass = ratio >= threshold;
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between gap-2 rounded-lg px-3 py-2 border border-zinc-100 dark:border-zinc-800';
+
+      const labelEl = document.createElement('span');
+      labelEl.className = 'text-sm text-zinc-700 dark:text-zinc-300';
+      labelEl.textContent = label;
+
+      const badge = document.createElement('span');
+      badge.className = pass
+        ? 'rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400'
+        : 'rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700 dark:bg-red-500/10 dark:text-red-400';
+      badge.textContent = pass ? labelPass : labelFail;
+
+      row.appendChild(labelEl);
+      row.appendChild(badge);
+      return row;
+    }
+
+    function updateContrast() {
+      const fgRgb = hexToRgb(ctFgInput.value);
+      const bgRgb = hexToRgb(ctBgInput.value);
+      if (!fgRgb || !bgRgb) return;
+
+      const fgHex = rgbToHex(...fgRgb);
+      const bgHex = rgbToHex(...bgRgb);
+
+      // Sync pickers
+      ctFgPicker.value = fgHex;
+      ctBgPicker.value = bgHex;
+
+      // Compute contrast
+      const lFg = relativeLuminance(...fgRgb);
+      const lBg = relativeLuminance(...bgRgb);
+      const ratio = contrastRatio(lFg, lBg);
+
+      ctRatio.textContent = ratio.toFixed(2) + ':1';
+
+      // Rebuild grades
+      while (ctGrades.firstChild) ctGrades.removeChild(ctGrades.firstChild);
+      const grades = [
+        { label: getLabel('aaNormalLabel'),  threshold: 4.5 },
+        { label: getLabel('aaLargeLabel'),   threshold: 3   },
+        { label: getLabel('aaaNormalLabel'), threshold: 7   },
+        { label: getLabel('aaaLargeLabel'),  threshold: 4.5 },
+      ];
+      grades.forEach(({ label, threshold }) => {
+        ctGrades.appendChild(buildGradeRow(label, threshold, ratio));
+      });
+
+      // Update preview
+      (ctPreview as HTMLElement).style.color      = fgHex;
+      (ctPreview as HTMLElement).style.background = bgHex;
+    }
+
+    // Sync picker → text
+    ctFgPicker.addEventListener('input', () => {
+      ctFgInput.value = ctFgPicker.value;
+      updateContrast();
+    });
+    ctBgPicker.addEventListener('input', () => {
+      ctBgInput.value = ctBgPicker.value;
+      updateContrast();
+    });
+
+    // Sync text → picker + update
+    ctFgInput.addEventListener('input', () => {
+      const rgb = hexToRgb(ctFgInput.value);
+      if (rgb) ctFgPicker.value = rgbToHex(...rgb);
+      updateContrast();
+    });
+    ctBgInput.addEventListener('input', () => {
+      const rgb = hexToRgb(ctBgInput.value);
+      if (rgb) ctBgPicker.value = rgbToHex(...rgb);
+      updateContrast();
+    });
+
+    // Initial run
+    updateContrast();
   </script>
+
 </ToolPageLayout>

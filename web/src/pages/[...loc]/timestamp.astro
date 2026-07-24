@@ -7,168 +7,495 @@ const lang = langOfParam(Astro.params.loc);
 
 const copy = {
   zh: {
-    title: 'Unix 时间戳转换 - 秒/毫秒与日期时间互转 | DevBox',
-    description:
-      '在线 Unix 时间戳转换:自动识别秒/毫秒,时间戳与日期互转,同时给出本地时区、UTC 与 ISO 格式。开发者调试接口时间必备,浏览器本地计算。',
-    tsToDate: '时间戳 → 日期',
-    fillNow: '填入当前',
-    tsPlaceholder: '如 1720000000',
-    dateToTs: '日期 → 时间戳',
+    title: 'Unix 时间戳转换器 | DevBox',
+    description: '在线 Unix 时间戳与日期时间双向转换工具，支持秒/毫秒自动识别、多时区格式化输出。',
+    nowTitle: '当前时间',
+    nowSeconds: '秒（Unix 时间戳）',
+    nowMilliseconds: '毫秒',
+    tsToDateTitle: '时间戳 → 日期',
+    tsInputLabel: 'Unix 时间戳',
+    tsInputPlaceholder: '输入时间戳（秒或毫秒）',
+    autoDetect: '自动检测',
+    seconds: '秒',
+    milliseconds: '毫秒',
+    utcLabel: 'UTC 时间',
+    localLabel: '本地时间',
+    isoLabel: 'ISO 8601',
+    tzLabel: '指定时区',
+    selectTz: '选择时区',
+    dateToTsTitle: '日期 → 时间戳',
+    dateInputLabel: '日期时间',
+    tzInputLabel: '时区（可选）',
+    outputSeconds: '时间戳（秒）',
+    outputMs: '时间戳（毫秒）',
+    copy: '复制',
+    copied: '已复制',
+    invalidTs: '无效的时间戳，请输入有效的数字。',
+    invalidDate: '无效的日期，请选择有效的日期时间。',
     faqs: [
       {
-        q: '时间戳是秒还是毫秒?',
-        a: '两者都有:10 位通常是秒(如 1720000000),13 位是毫秒(如 1720000000000)。本工具会自动识别并按对应单位解析。',
+        q: '什么是 Unix 时间戳？',
+        a: 'Unix 时间戳（也称为 POSIX 时间或 Epoch 时间）是从 1970 年 1 月 1 日 00:00:00 UTC 起经过的秒数。它是一种与时区无关的绝对时间表示方式，广泛用于计算机系统和网络协议中。',
       },
       {
-        q: '为什么转换结果和我预期差了几个小时?',
-        a: '多半是时区差异。工具同时给出"本地时区"和"UTC"两种结果,按你需要的时区取用即可。',
+        q: '秒和毫秒时间戳有什么区别？如何判断？',
+        a: '秒级时间戳（10 位数）精确到秒，毫秒级时间戳（13 位数）精确到毫秒。通常以 10¹⁰（即 10,000,000,000）为分界：大于该值视为毫秒时间戳，否则视为秒时间戳。本工具会自动识别并转换。',
       },
     ],
   },
   en: {
-    title: 'Unix Timestamp Converter - Seconds/Milliseconds and Date Conversion | DevBox',
-    description:
-      'Online Unix timestamp converter: auto-detects seconds/milliseconds, converts between timestamps and dates, and shows local, UTC and ISO formats at once. Essential for debugging API times — computed locally in your browser.',
-    tsToDate: 'Timestamp → Date',
-    fillNow: 'Fill now',
-    tsPlaceholder: 'e.g. 1720000000',
-    dateToTs: 'Date → Timestamp',
+    title: 'Unix Timestamp Converter | DevBox',
+    description: 'Convert Unix timestamps to human-readable dates and vice versa. Supports auto-detection of seconds vs milliseconds and multi-timezone formatting.',
+    nowTitle: 'Current Time',
+    nowSeconds: 'Seconds (Unix timestamp)',
+    nowMilliseconds: 'Milliseconds',
+    tsToDateTitle: 'Timestamp → Date',
+    tsInputLabel: 'Unix Timestamp',
+    tsInputPlaceholder: 'Enter timestamp (seconds or milliseconds)',
+    autoDetect: 'Auto-detect',
+    seconds: 'Seconds',
+    milliseconds: 'Milliseconds',
+    utcLabel: 'UTC',
+    localLabel: 'Local Time',
+    isoLabel: 'ISO 8601',
+    tzLabel: 'Custom Timezone',
+    selectTz: 'Select timezone',
+    dateToTsTitle: 'Date → Timestamp',
+    dateInputLabel: 'Date & Time',
+    tzInputLabel: 'Timezone (optional)',
+    outputSeconds: 'Timestamp (seconds)',
+    outputMs: 'Timestamp (milliseconds)',
+    copy: 'Copy',
+    copied: 'Copied',
+    invalidTs: 'Invalid timestamp. Please enter a valid number.',
+    invalidDate: 'Invalid date. Please select a valid date and time.',
     faqs: [
       {
-        q: 'Is the timestamp in seconds or milliseconds?',
-        a: 'Both exist: 10 digits is usually seconds (e.g. 1720000000), 13 digits is milliseconds (e.g. 1720000000000). This tool auto-detects and parses each accordingly.',
+        q: 'What is a Unix timestamp?',
+        a: 'A Unix timestamp (also known as POSIX time or Epoch time) is the number of seconds elapsed since January 1, 1970 at 00:00:00 UTC. It is a timezone-independent absolute time representation widely used in computer systems and network protocols.',
       },
       {
-        q: 'Why is the result off by a few hours from what I expected?',
-        a: 'It is almost always a timezone difference. The tool shows both a "local time" and a "UTC" result — use whichever timezone you need.',
+        q: 'What is the difference between second and millisecond timestamps?',
+        a: 'Second-precision timestamps (10 digits) represent time to the nearest second, while millisecond-precision timestamps (13 digits) represent time to the nearest millisecond. Values greater than 10¹⁰ (10,000,000,000) are treated as milliseconds; smaller values are treated as seconds. This tool auto-detects the format.',
       },
     ],
   },
 }[lang];
-
-const inputCls =
-  'w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-base text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
 ---
 
 <ToolPageLayout slug="timestamp" title={copy.title} description={copy.description} faqs={copy.faqs}>
-  <div class="grid gap-6 md:grid-cols-2">
-    <!-- 时间戳 -> 日期 -->
-    <div class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-      <div class="mb-2 flex items-center justify-between">
-        <label for="ts-in" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.tsToDate}</label>
-        <button id="ts-now" type="button" class="text-xs font-medium text-violet-600 dark:text-violet-400">{copy.fillNow}</button>
+  <!-- Now Section -->
+  <div class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <h2 class="mb-4 text-base font-semibold text-zinc-900 dark:text-white">{copy.nowTitle}</h2>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <div class="flex flex-col gap-1.5">
+        <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.nowSeconds}</span>
+        <div class="flex items-center gap-2">
+          <span
+            id="now-seconds"
+            class="flex-1 rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+          ></span>
+          <button
+            data-copy-target="now-seconds"
+            class="rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >{copy.copy}</button>
+        </div>
       </div>
-      <input id="ts-in" type="text" inputmode="numeric" placeholder={copy.tsPlaceholder} class={inputCls} />
-      <div id="ts-out" class="mt-4 space-y-2 text-sm"></div>
+      <div class="flex flex-col gap-1.5">
+        <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.nowMilliseconds}</span>
+        <div class="flex items-center gap-2">
+          <span
+            id="now-ms"
+            class="flex-1 rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+          ></span>
+          <button
+            data-copy-target="now-ms"
+            class="rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+          >{copy.copy}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timestamp → Date Section -->
+  <div class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <h2 class="mb-4 text-base font-semibold text-zinc-900 dark:text-white">{copy.tsToDateTitle}</h2>
+    <div class="mb-4 flex flex-col gap-1.5">
+      <label for="ts-input" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.tsInputLabel}</label>
+      <div class="flex items-center gap-2">
+        <input
+          id="ts-input"
+          type="number"
+          placeholder={copy.tsInputPlaceholder}
+          class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+        />
+        <button
+          id="ts-use-now"
+          class="shrink-0 rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+        >Now</button>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="ts-detect-badge" class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 hidden"></span>
+      </div>
     </div>
 
-    <!-- 日期 -> 时间戳 -->
-    <div class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-      <label for="dt-in" class="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.dateToTs}</label>
-      <input id="dt-in" type="datetime-local" step="1" class={inputCls} />
-      <div id="dt-out" class="mt-4 space-y-2 text-sm"></div>
+    <div class="mb-4 flex flex-col gap-1.5">
+      <label for="ts-tz-select" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.selectTz}</label>
+      <select
+        id="ts-tz-select"
+        class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+      >
+        <option value="UTC">UTC</option>
+        <option value="America/New_York">America/New_York</option>
+        <option value="America/Chicago">America/Chicago</option>
+        <option value="America/Los_Angeles">America/Los_Angeles</option>
+        <option value="America/Toronto">America/Toronto</option>
+        <option value="America/Sao_Paulo">America/Sao_Paulo</option>
+        <option value="Europe/London">Europe/London</option>
+        <option value="Europe/Paris">Europe/Paris</option>
+        <option value="Europe/Berlin">Europe/Berlin</option>
+        <option value="Europe/Moscow">Europe/Moscow</option>
+        <option value="Africa/Cairo">Africa/Cairo</option>
+        <option value="Asia/Dubai">Asia/Dubai</option>
+        <option value="Asia/Kolkata">Asia/Kolkata</option>
+        <option value="Asia/Bangkok">Asia/Bangkok</option>
+        <option value="Asia/Shanghai">Asia/Shanghai</option>
+        <option value="Asia/Singapore">Asia/Singapore</option>
+        <option value="Asia/Seoul">Asia/Seoul</option>
+        <option value="Asia/Tokyo">Asia/Tokyo</option>
+        <option value="Australia/Sydney">Australia/Sydney</option>
+        <option value="Pacific/Auckland">Pacific/Auckland</option>
+      </select>
+    </div>
+
+    <div id="ts-error" class="mb-3 hidden rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-500/5 dark:text-red-300"></div>
+
+    <div id="ts-results" class="hidden grid gap-3">
+      <!-- UTC -->
+      <div class="flex flex-col gap-1.5">
+        <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.utcLabel}</span>
+        <div class="flex items-center gap-2">
+          <span id="ts-utc" class="flex-1 rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"></span>
+          <button data-copy-target="ts-utc" class="shrink-0 rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">{copy.copy}</button>
+        </div>
+      </div>
+      <!-- Local -->
+      <div class="flex flex-col gap-1.5">
+        <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.localLabel}</span>
+        <div class="flex items-center gap-2">
+          <span id="ts-local" class="flex-1 rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"></span>
+          <button data-copy-target="ts-local" class="shrink-0 rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">{copy.copy}</button>
+        </div>
+      </div>
+      <!-- ISO 8601 -->
+      <div class="flex flex-col gap-1.5">
+        <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.isoLabel}</span>
+        <div class="flex items-center gap-2">
+          <span id="ts-iso" class="flex-1 rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"></span>
+          <button data-copy-target="ts-iso" class="shrink-0 rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">{copy.copy}</button>
+        </div>
+      </div>
+      <!-- Custom TZ -->
+      <div class="flex flex-col gap-1.5">
+        <span id="ts-tz-label" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.tzLabel}</span>
+        <div class="flex items-center gap-2">
+          <span id="ts-tz-result" class="flex-1 rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"></span>
+          <button data-copy-target="ts-tz-result" class="shrink-0 rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">{copy.copy}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Date → Timestamp Section -->
+  <div class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+    <h2 class="mb-4 text-base font-semibold text-zinc-900 dark:text-white">{copy.dateToTsTitle}</h2>
+    <div class="mb-4 flex flex-col gap-1.5">
+      <label for="date-input" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.dateInputLabel}</label>
+      <input
+        id="date-input"
+        type="datetime-local"
+        class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+      />
+    </div>
+
+    <div class="mb-4 flex flex-col gap-1.5">
+      <label for="date-tz-select" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.tzInputLabel}</label>
+      <select
+        id="date-tz-select"
+        class="w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+      >
+        <option value="">Local time</option>
+        <option value="UTC">UTC</option>
+        <option value="America/New_York">America/New_York</option>
+        <option value="America/Chicago">America/Chicago</option>
+        <option value="America/Los_Angeles">America/Los_Angeles</option>
+        <option value="America/Toronto">America/Toronto</option>
+        <option value="America/Sao_Paulo">America/Sao_Paulo</option>
+        <option value="Europe/London">Europe/London</option>
+        <option value="Europe/Paris">Europe/Paris</option>
+        <option value="Europe/Berlin">Europe/Berlin</option>
+        <option value="Europe/Moscow">Europe/Moscow</option>
+        <option value="Africa/Cairo">Africa/Cairo</option>
+        <option value="Asia/Dubai">Asia/Dubai</option>
+        <option value="Asia/Kolkata">Asia/Kolkata</option>
+        <option value="Asia/Bangkok">Asia/Bangkok</option>
+        <option value="Asia/Shanghai">Asia/Shanghai</option>
+        <option value="Asia/Singapore">Asia/Singapore</option>
+        <option value="Asia/Seoul">Asia/Seoul</option>
+        <option value="Asia/Tokyo">Asia/Tokyo</option>
+        <option value="Australia/Sydney">Australia/Sydney</option>
+        <option value="Pacific/Auckland">Pacific/Auckland</option>
+      </select>
+    </div>
+
+    <div id="date-error" class="mb-3 hidden rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-500/5 dark:text-red-300"></div>
+
+    <div id="date-results" class="hidden grid gap-3">
+      <div class="flex flex-col gap-1.5">
+        <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.outputSeconds}</span>
+        <div class="flex items-center gap-2">
+          <span id="date-ts-sec" class="flex-1 rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"></span>
+          <button data-copy-target="date-ts-sec" class="shrink-0 rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">{copy.copy}</button>
+        </div>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.outputMs}</span>
+        <div class="flex items-center gap-2">
+          <span id="date-ts-ms" class="flex-1 rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"></span>
+          <button data-copy-target="date-ts-ms" class="shrink-0 rounded-lg bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200">{copy.copy}</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    const L = document.documentElement.dataset.lang === 'en' ? 'en' : 'zh';
-    const TXT = {
-      copy: L === 'en' ? 'Copy' : '复制',
-      copied: L === 'en' ? 'Copied' : '已复制',
-      localTime: L === 'en' ? 'Local time' : '本地时间',
-      relative: L === 'en' ? 'Relative to now' : '相对现在',
-      seconds: L === 'en' ? 'Seconds (s)' : '秒 (s)',
-      millis: L === 'en' ? 'Milliseconds (ms)' : '毫秒 (ms)',
-      needDigits: L === 'en' ? 'Enter a numeric timestamp' : '请输入纯数字时间戳',
-      invalid: L === 'en' ? 'Invalid timestamp' : '无效的时间戳',
-    };
-    const tsIn = document.getElementById('ts-in') as HTMLInputElement;
-    const tsOut = document.getElementById('ts-out')!;
-    const tsNow = document.getElementById('ts-now')!;
-    const dtIn = document.getElementById('dt-in') as HTMLInputElement;
-    const dtOut = document.getElementById('dt-out')!;
+    // ── i18n strings injected from Astro at build time ──────────────────────
+    const COPY_LABEL = document.documentElement.lang === 'zh'
+      ? { copy: '复制', copied: '已复制', autoDetect: '自动检测', seconds: '秒', milliseconds: '毫秒', invalidTs: '无效的时间戳，请输入有效的数字。', invalidDate: '无效的日期，请选择有效的日期时间。', tzLabel: '指定时区' }
+      : { copy: 'Copy', copied: 'Copied', autoDetect: 'Auto-detect', seconds: 'Seconds', milliseconds: 'Milliseconds', invalidTs: 'Invalid timestamp. Please enter a valid number.', invalidDate: 'Invalid date. Please select a valid date and time.', tzLabel: 'Custom Timezone' };
 
-    const esc = (s: string) => s.replace(/"/g, '&quot;');
-    function row(label: string, val: string) {
-      return `<div class="flex items-center justify-between gap-3"><span class="text-zinc-400">${label}</span><span class="flex items-center gap-2 min-w-0"><code class="truncate font-mono text-zinc-800 dark:text-zinc-100">${val}</code><button class="copy-inline shrink-0 text-xs text-violet-500" data-val="${esc(val)}">${TXT.copy}</button></span></div>`;
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function isMs(value: number): boolean {
+      return value > 1e10;
     }
 
-    const WEEK_ZH = ['日', '一', '二', '三', '四', '五', '六'];
-    const WEEK_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    function fmt(d: Date) {
-      const p = (n: number) => String(n).padStart(2, '0');
-      const base = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
-      return L === 'en' ? `${base} ${WEEK_EN[d.getDay()]}` : `${base} 周${WEEK_ZH[d.getDay()]}`;
+    function toMs(value: number): number {
+      return isMs(value) ? value : value * 1000;
     }
-    function relative(ms: number) {
-      const diff = ms - Date.now();
-      const rtf = new Intl.RelativeTimeFormat(L === 'en' ? 'en' : 'zh-CN', { numeric: 'auto' });
-      const abs = Math.abs(diff);
-      const units: [number, Intl.RelativeTimeFormatUnit][] = [
-        [86400000, 'day'],
-        [3600000, 'hour'],
-        [60000, 'minute'],
-        [1000, 'second'],
-      ];
-      for (const [u, name] of units) {
-        if (abs >= u || name === 'second') return rtf.format(Math.round(diff / u), name);
+
+    function formatInTz(date: Date, tz: string): string {
+      try {
+        return new Intl.DateTimeFormat('en-US', {
+          timeZone: tz,
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit',
+          hour12: false,
+          timeZoneName: 'short',
+        }).format(date);
+      } catch {
+        return 'Unsupported timezone';
       }
-      return '';
     }
 
-    function renderTs() {
-      const raw = tsIn.value.trim();
-      if (!raw || !/^-?\d+$/.test(raw)) {
-        tsOut.innerHTML = raw ? `<p class="text-red-500">${TXT.needDigits}</p>` : '';
-        return;
-      }
-      let n = Number(raw);
-      const ms = raw.replace('-', '').length >= 13 ? n : n * 1000;
-      const d = new Date(ms);
-      if (isNaN(d.getTime())) {
-        tsOut.innerHTML = `<p class="text-red-500">${TXT.invalid}</p>`;
-        return;
-      }
-      tsOut.innerHTML =
-        row(TXT.localTime, fmt(d)) +
-        row('UTC', d.toUTCString()) +
-        row('ISO 8601', d.toISOString()) +
-        row(TXT.relative, relative(ms));
+    function setTextOf(id: string, text: string) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
     }
 
-    function renderDt() {
-      const v = dtIn.value;
-      if (!v) {
-        dtOut.innerHTML = '';
-        return;
+    function showEl(id: string, show: boolean) {
+      const el = document.getElementById(id);
+      if (el) {
+        if (show) {
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
       }
-      const d = new Date(v);
-      const ms = d.getTime();
-      dtOut.innerHTML =
-        row(TXT.seconds, String(Math.floor(ms / 1000))) +
-        row(TXT.millis, String(ms)) +
-        row('ISO 8601', d.toISOString());
     }
 
-    tsIn.addEventListener('input', renderTs);
-    dtIn.addEventListener('input', renderDt);
-    tsNow.addEventListener('click', () => {
-      tsIn.value = String(Math.floor(Date.now() / 1000));
-      renderTs();
+    // ── Copy buttons ─────────────────────────────────────────────────────────
+    document.addEventListener('click', (e: Event) => {
+      const btn = (e.target as HTMLElement).closest('[data-copy-target]') as HTMLElement | null;
+      if (!btn) return;
+      const targetId = btn.getAttribute('data-copy-target');
+      if (!targetId) return;
+      const el = document.getElementById(targetId);
+      if (!el) return;
+      const text = el.textContent || '';
+      if (!text.trim()) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.textContent || '';
+        btn.textContent = COPY_LABEL.copied;
+        setTimeout(() => { btn.textContent = orig; }, 1500);
+      }).catch(() => {});
     });
 
-    // 复制(事件委托)
-    document.addEventListener('click', async (e) => {
-      const t = (e.target as HTMLElement).closest('.copy-inline') as HTMLElement | null;
-      if (!t) return;
-      await navigator.clipboard.writeText(t.dataset.val!);
-      const old = t.textContent;
-      t.textContent = TXT.copied;
-      setTimeout(() => (t.textContent = old), 1200);
+    // ── Now section ──────────────────────────────────────────────────────────
+    function updateNow() {
+      const now = Date.now();
+      setTextOf('now-seconds', String(Math.floor(now / 1000)));
+      setTextOf('now-ms', String(now));
+    }
+    updateNow();
+    setInterval(updateNow, 1000);
+
+    // ── Timestamp → Date ─────────────────────────────────────────────────────
+    const tsInput = document.getElementById('ts-input') as HTMLInputElement;
+    const tsTzSelect = document.getElementById('ts-tz-select') as HTMLSelectElement;
+    const tsUseNow = document.getElementById('ts-use-now') as HTMLButtonElement;
+    const tsDetectBadge = document.getElementById('ts-detect-badge') as HTMLElement;
+    const tsError = document.getElementById('ts-error') as HTMLElement;
+    const tsResults = document.getElementById('ts-results') as HTMLElement;
+
+    function convertTs() {
+      const raw = tsInput.value.trim();
+      if (!raw) {
+        showEl('ts-error', false);
+        showEl('ts-results', false);
+        showEl('ts-detect-badge', false);
+        return;
+      }
+
+      const num = Number(raw);
+      if (!isFinite(num) || isNaN(num)) {
+        tsError.textContent = COPY_LABEL.invalidTs;
+        showEl('ts-error', true);
+        showEl('ts-results', false);
+        showEl('ts-detect-badge', false);
+        return;
+      }
+
+      showEl('ts-error', false);
+
+      const ms = toMs(num);
+      const unitLabel = isMs(num) ? COPY_LABEL.milliseconds : COPY_LABEL.seconds;
+      tsDetectBadge.textContent = `${COPY_LABEL.autoDetect}: ${unitLabel}`;
+      showEl('ts-detect-badge', true);
+
+      const date = new Date(ms);
+
+      // UTC
+      setTextOf('ts-utc', formatInTz(date, 'UTC'));
+      // Local
+      setTextOf('ts-local', date.toLocaleString());
+      // ISO 8601
+      setTextOf('ts-iso', date.toISOString());
+      // Custom TZ
+      const tz = tsTzSelect.value || 'UTC';
+      const tzLabelEl = document.getElementById('ts-tz-label');
+      if (tzLabelEl) tzLabelEl.textContent = tz;
+      setTextOf('ts-tz-result', formatInTz(date, tz));
+
+      showEl('ts-results', true);
+    }
+
+    tsInput.addEventListener('input', convertTs);
+    tsTzSelect.addEventListener('change', convertTs);
+    tsUseNow.addEventListener('click', () => {
+      tsInput.value = String(Math.floor(Date.now() / 1000));
+      convertTs();
     });
 
-    // 初始化:当前时间
-    tsIn.value = String(Math.floor(Date.now() / 1000));
-    renderTs();
+    // ── Date → Timestamp ─────────────────────────────────────────────────────
+    const dateInput = document.getElementById('date-input') as HTMLInputElement;
+    const dateTzSelect = document.getElementById('date-tz-select') as HTMLSelectElement;
+    const dateError = document.getElementById('date-error') as HTMLElement;
+    const dateResults = document.getElementById('date-results') as HTMLElement;
+
+    // Set datetime-local default to now
+    (function seedDateInput() {
+      const now = new Date();
+      // datetime-local requires format: YYYY-MM-DDTHH:mm
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const local = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      dateInput.value = local;
+    })();
+
+    function dateToTimestamp(dtLocalStr: string, tz: string): number | null {
+      // dtLocalStr is "YYYY-MM-DDTHH:mm" (no timezone info)
+      if (!dtLocalStr) return null;
+
+      if (!tz) {
+        // Treat as local time
+        const d = new Date(dtLocalStr);
+        if (isNaN(d.getTime())) return null;
+        return d.getTime();
+      }
+
+      // We need to interpret the datetime-local value in the given timezone.
+      // Strategy: use Intl to find the UTC offset for that tz at the parsed local time.
+      // Parse the string manually to avoid local-time interpretation.
+      const [datePart, timePart] = dtLocalStr.split('T');
+      if (!datePart || !timePart) return null;
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hour, minute] = timePart.split(':').map(Number);
+
+      // First approximation: interpret as UTC
+      const utcGuess = Date.UTC(year, month - 1, day, hour, minute, 0, 0);
+
+      // Get the UTC offset for the target TZ at this approximate time
+      // We use Intl.DateTimeFormat to get offsetted parts
+      try {
+        const fmt = new Intl.DateTimeFormat('en-US', {
+          timeZone: tz,
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', second: '2-digit',
+          hour12: false,
+        });
+        // format utcGuess and see what local time the TZ produces
+        const parts = fmt.formatToParts(new Date(utcGuess));
+        const get = (type: string) => {
+          const p = parts.find(x => x.type === type);
+          return p ? Number(p.value) : 0;
+        };
+        const tzYear = get('year');
+        const tzMonth = get('month');
+        const tzDay = get('day');
+        const tzHour = get('hour') % 24; // handle 24 -> 0
+        const tzMin = get('minute');
+        const tzSec = get('second');
+
+        // difference between UTC and what the TZ displays for utcGuess
+        const displayedAsUtc = Date.UTC(tzYear, tzMonth - 1, tzDay, tzHour, tzMin, tzSec);
+        const offsetMs = utcGuess - displayedAsUtc;
+
+        // The actual UTC epoch for the intended local time in TZ
+        const result = Date.UTC(year, month - 1, day, hour, minute, 0, 0) + offsetMs;
+        return result;
+      } catch {
+        return null;
+      }
+    }
+
+    function convertDate() {
+      const val = dateInput.value;
+      if (!val) {
+        showEl('date-error', false);
+        showEl('date-results', false);
+        return;
+      }
+
+      const tz = dateTzSelect.value;
+      const ms = dateToTimestamp(val, tz);
+
+      if (ms === null || isNaN(ms)) {
+        dateError.textContent = COPY_LABEL.invalidDate;
+        showEl('date-error', true);
+        showEl('date-results', false);
+        return;
+      }
+
+      showEl('date-error', false);
+      setTextOf('date-ts-sec', String(Math.floor(ms / 1000)));
+      setTextOf('date-ts-ms', String(ms));
+      showEl('date-results', true);
+    }
+
+    dateInput.addEventListener('input', convertDate);
+    dateTzSelect.addEventListener('change', convertDate);
+
+    // Run initial conversions
+    convertTs();
+    convertDate();
   </script>
 </ToolPageLayout>

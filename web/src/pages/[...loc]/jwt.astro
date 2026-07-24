@@ -7,95 +7,179 @@ const lang = langOfParam(Astro.params.loc);
 
 const copy = {
   zh: {
-    title: 'JWT 解码器 - 在线解析 Token 的 Header 与 Payload | DevBox',
+    title: 'JWT 解析器 - 在线解码 Token 的 Header 与 Payload | DevBox',
     description:
-      '在线 JWT 解码:解析 JSON Web Token 的 Header 与 Payload,自动把 exp/iat 等时间戳转成可读日期。浏览器本地解析,token 不外传。',
+      '在线 JWT 解析工具:语法高亮展示 Header 与 Payload,自动把 exp/iat 时间戳转成可读日期并标注是否已过期。浏览器本地解析,token 不外传。',
     labelToken: 'JWT Token',
-    labelHint: '(可粘贴 AI 或接口返回的 token)',
-    placeholder: 'eyJhbGciOiJI…（三段以 . 分隔)',
-    headerTitle: 'Header(算法与类型)',
-    payloadTitle: 'Payload(数据)',
+    labelHint: '(可粘贴来自 API 或 AI 的 token)',
+    placeholder: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.…',
+    clearBtn: '清空',
+    claimsTitle: '关键字段',
+    alg: '算法',
+    exp: '过期时间',
+    iat: '签发时间',
+    iss: '签发者',
+    sub: '主体',
+    aud: '受众',
+    expired: '已过期',
+    valid: '有效',
+    expiredAgo: (s: string) => `${s}前过期`,
+    expiresIn: (s: string) => `还有 ${s} 过期`,
+    headerTitle: 'Header（算法与类型）',
+    payloadTitle: 'Payload（数据）',
+    sigTitle: 'Signature（签名）',
+    sigNote: '签名无法在浏览器端验证，需要服务端持有的密钥才能校验。',
+    errFormat: '格式有误：JWT 应为以 . 分隔的三段 "header.payload.signature"',
+    errDecode: '解码失败：token 内容不是有效的 Base64url 或 JSON',
     faqs: [
       {
-        q: '这个工具会验证签名吗?',
-        a: '不会。验证签名需要密钥,本工具只做解码(展示 token 里的内容),token 全程在你浏览器本地处理、不上传。',
+        q: 'JWT 由哪三部分组成？',
+        a: 'JWT 分为三段，以 . 连接：Header（算法信息）、Payload（声明数据）、Signature（签名）。前两段是 Base64url 编码，不是加密，任何人都能解开查看，因此不要在 Payload 里放敏感明文。',
       },
       {
-        q: 'JWT 里的信息安全吗?',
-        a: 'JWT 的 Header 和 Payload 只是 Base64 编码、并非加密,任何人都能解开查看。因此不要在 Payload 里放敏感明文信息。',
+        q: '这个工具能验证签名吗？',
+        a: '不能。验证签名需要服务端的密钥（HMAC 密钥或 RSA/EC 公钥），本工具仅做解码展示，token 全程在浏览器本地处理，不上传到任何服务器。',
       },
     ],
   },
   en: {
     title: 'JWT Decoder - Decode a Token Header and Payload Online | DevBox',
     description:
-      'Online JWT decoder: parse the header and payload of a JSON Web Token and automatically turn exp/iat timestamps into readable dates. Decoded locally in your browser — the token never leaves the page.',
+      'Online JWT decoder with syntax highlighting: inspect header and payload, auto-convert exp/iat timestamps to readable dates with expired/valid status. Decoded locally — the token never leaves your browser.',
     labelToken: 'JWT Token',
-    labelHint: '(paste a token from AI or an API response)',
-    placeholder: 'eyJhbGciOiJI… (three parts separated by .)',
+    labelHint: '(paste a token from an API or AI response)',
+    placeholder: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.…',
+    clearBtn: 'Clear',
+    claimsTitle: 'Key Claims',
+    alg: 'Algorithm',
+    exp: 'Expires at',
+    iat: 'Issued at',
+    iss: 'Issuer',
+    sub: 'Subject',
+    aud: 'Audience',
+    expired: 'Expired',
+    valid: 'Valid',
+    expiredAgo: (s: string) => `expired ${s} ago`,
+    expiresIn: (s: string) => `expires in ${s}`,
     headerTitle: 'Header (algorithm & type)',
     payloadTitle: 'Payload (data)',
+    sigTitle: 'Signature',
+    sigNote: 'The signature cannot be verified without the secret key — that stays on the server.',
+    errFormat: 'Wrong format: a JWT must have three parts separated by "." — header.payload.signature',
+    errDecode: 'Decode failed: the token content is not valid Base64url or JSON',
     faqs: [
       {
-        q: 'Does this tool verify the signature?',
-        a: 'No. Verifying a signature requires the secret key. This tool only decodes (shows what is inside the token); the token is processed entirely in your browser and never uploaded.',
+        q: 'What are the three parts of a JWT?',
+        a: 'A JWT consists of three Base64url-encoded segments joined by dots: Header (algorithm info), Payload (claims), and Signature. The first two are only encoded, not encrypted — anyone can decode them, so never put sensitive plaintext in the payload.',
       },
       {
-        q: 'Is the information in a JWT secure?',
-        a: 'A JWT header and payload are only Base64-encoded, not encrypted — anyone can decode and read them. So never put sensitive plaintext in the payload.',
+        q: 'Can this tool verify the signature?',
+        a: 'No. Verifying the signature requires the server-side secret (an HMAC key or RSA/EC public key). This tool only decodes and displays the contents; the token is processed entirely in your browser and never uploaded anywhere.',
       },
     ],
   },
 }[lang];
 
 const areaCls =
-  'w-full rounded-xl border border-zinc-300 bg-zinc-50 p-4 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
+  'w-full rounded-xl border border-zinc-300 bg-zinc-50 px-4 py-3 font-mono text-sm text-zinc-900 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white';
 ---
 
 <ToolPageLayout slug="jwt" title={copy.title} description={copy.description} faqs={copy.faqs}>
-  <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-    {copy.labelToken} <span class="font-normal text-zinc-400">{copy.labelHint}</span>
-  </label>
-  <textarea id="in" class={`${areaCls} h-32`} placeholder={copy.placeholder} spellcheck="false"></textarea>
-  <p id="err" class="mt-2 hidden text-sm text-red-500"></p>
+  <!-- Input -->
+  <div class="flex items-center justify-between mb-1">
+    <label for="inp" class="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      {copy.labelToken}
+      <span class="font-normal text-zinc-400 dark:text-zinc-500">{copy.labelHint}</span>
+    </label>
+    <button id="clearBtn" type="button"
+      class="rounded-lg border border-zinc-300 px-3 py-1 text-xs text-zinc-600 hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-500 dark:hover:text-zinc-200">
+      {copy.clearBtn}
+    </button>
+  </div>
+  <textarea
+    id="inp"
+    class={`${areaCls} h-28 resize-none`}
+    placeholder={copy.placeholder}
+    spellcheck="false"
+    autocomplete="off"
+    autocorrect="off"
+    autocapitalize="off"
+  ></textarea>
 
+  <!-- Error -->
+  <p id="err" class="mt-2 hidden rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-500/5 dark:text-red-300"></p>
+
+  <!-- Result -->
   <div id="result" class="mt-5 hidden space-y-4">
-    <div>
-      <p class="mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">{copy.headerTitle}</p>
-      <pre class="rounded-xl bg-zinc-900 p-4 font-mono text-sm whitespace-pre-wrap break-words text-zinc-100"><code id="header"></code></pre>
+
+    <!-- Key Claims -->
+    <div class="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+      <p class="mb-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">{copy.claimsTitle}</p>
+      <div id="claims" class="space-y-2"></div>
     </div>
+
+    <!-- Header JSON -->
     <div>
-      <p class="mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">{copy.payloadTitle}</p>
-      <pre class="rounded-xl bg-zinc-900 p-4 font-mono text-sm whitespace-pre-wrap break-words text-zinc-100"><code id="payload"></code></pre>
+      <p class="mb-1.5 text-sm font-medium text-zinc-500 dark:text-zinc-400">{copy.headerTitle}</p>
+      <pre class="overflow-x-auto rounded-xl bg-zinc-900 p-4 font-mono text-sm leading-relaxed dark:bg-zinc-950"><code id="hdr"></code></pre>
     </div>
-    <div id="times" class="space-y-1.5 text-sm"></div>
+
+    <!-- Payload JSON -->
+    <div>
+      <p class="mb-1.5 text-sm font-medium text-zinc-500 dark:text-zinc-400">{copy.payloadTitle}</p>
+      <pre class="overflow-x-auto rounded-xl bg-zinc-900 p-4 font-mono text-sm leading-relaxed dark:bg-zinc-950"><code id="pld"></code></pre>
+    </div>
+
+    <!-- Signature -->
+    <div>
+      <p class="mb-1.5 text-sm font-medium text-zinc-500 dark:text-zinc-400">{copy.sigTitle}</p>
+      <div class="rounded-xl bg-zinc-900 p-4 dark:bg-zinc-950">
+        <p id="sig" class="break-all font-mono text-sm text-zinc-400"></p>
+        <p class="mt-2 text-xs text-zinc-500">{copy.sigNote}</p>
+      </div>
+    </div>
+
   </div>
 
   <script>
-    const L = document.documentElement.dataset.lang === 'en' ? 'en' : 'zh';
-    const TXT = {
-      iat: L === 'en' ? 'Issued at (iat)' : '签发时间 (iat)',
-      nbf: L === 'en' ? 'Not before (nbf)' : '生效时间 (nbf)',
-      exp: L === 'en' ? 'Expires at (exp)' : '过期时间 (exp)',
-      expired: L === 'en' ? 'Expired' : '已过期',
-      valid: L === 'en' ? 'Valid' : '有效',
-      errFormat:
-        L === 'en'
-          ? 'Wrong format: a JWT should have three parts "header.payload.signature" (separated by .)'
-          : '格式不对:JWT 应为「header.payload.signature」三段(以 . 分隔)',
-      errDecode:
-        L === 'en'
-          ? 'Decode failed: the token content is not valid Base64/JSON'
-          : '解码失败:token 内容不是有效的 Base64/JSON',
+    /* ------------------------------------------------------------------ */
+    /* i18n strings resolved at runtime from html[data-lang]              */
+    /* ------------------------------------------------------------------ */
+    const L = (document.documentElement as HTMLElement).dataset.lang === 'en' ? 'en' : 'zh';
+    const T = {
+      alg:        L === 'en' ? 'Algorithm'   : '算法',
+      exp:        L === 'en' ? 'Expires at'  : '过期时间',
+      iat:        L === 'en' ? 'Issued at'   : '签发时间',
+      iss:        L === 'en' ? 'Issuer'      : '签发者',
+      sub:        L === 'en' ? 'Subject'     : '主体',
+      aud:        L === 'en' ? 'Audience'    : '受众',
+      expired:    L === 'en' ? 'Expired'     : '已过期',
+      valid:      L === 'en' ? 'Valid'       : '有效',
+      expiredAgo: (s: string) => L === 'en' ? `expired ${s} ago`  : `${s}前过期`,
+      expiresIn:  (s: string) => L === 'en' ? `expires in ${s}`   : `还有 ${s} 过期`,
+      errFormat:  L === 'en'
+        ? 'Wrong format: a JWT must have three parts separated by "." — header.payload.signature'
+        : '格式有误：JWT 应为以 . 分隔的三段 "header.payload.signature"',
+      errDecode:  L === 'en'
+        ? 'Decode failed: the token content is not valid Base64url or JSON'
+        : '解码失败：token 内容不是有效的 Base64url 或 JSON',
     };
-    const inEl = document.getElementById('in') as HTMLTextAreaElement;
-    const errEl = document.getElementById('err')!;
-    const result = document.getElementById('result')!;
-    const headerEl = document.getElementById('header')!;
-    const payloadEl = document.getElementById('payload')!;
-    const timesEl = document.getElementById('times')!;
 
-    function b64urlDecode(s: string) {
+    /* ------------------------------------------------------------------ */
+    /* DOM refs                                                             */
+    /* ------------------------------------------------------------------ */
+    const inp     = document.getElementById('inp')     as HTMLTextAreaElement;
+    const errEl   = document.getElementById('err')!;
+    const result  = document.getElementById('result')!;
+    const claims  = document.getElementById('claims')!;
+    const hdrEl   = document.getElementById('hdr')!;
+    const pldEl   = document.getElementById('pld')!;
+    const sigEl   = document.getElementById('sig')!;
+
+    /* ------------------------------------------------------------------ */
+    /* Base64url → UTF-8 string                                            */
+    /* ------------------------------------------------------------------ */
+    function b64urlDecode(s: string): string {
       s = s.replace(/-/g, '+').replace(/_/g, '/');
       while (s.length % 4) s += '=';
       const bin = atob(s);
@@ -103,61 +187,237 @@ const areaCls =
       return new TextDecoder().decode(bytes);
     }
 
-    const WEEK_ZH = ['日', '一', '二', '三', '四', '五', '六'];
-    function fmt(ms: number) {
+    /* ------------------------------------------------------------------ */
+    /* Date formatting                                                      */
+    /* ------------------------------------------------------------------ */
+    function fmtDate(ms: number): string {
       const d = new Date(ms);
       const p = (n: number) => String(n).padStart(2, '0');
-      const date = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+      const base = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
       if (L === 'en') {
-        const wd = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
-        return `${date} ${wd}`;
+        const wd = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+        return `${base} (${wd})`;
       }
-      return `${date} 周${WEEK_ZH[d.getDay()]}`;
+      const wd = ['日','一','二','三','四','五','六'][d.getDay()];
+      return `${base} 周${wd}`;
     }
-    function timeRow(label: string, sec: number, isExp: boolean) {
+
+    /* ------------------------------------------------------------------ */
+    /* Relative time                                                        */
+    /* ------------------------------------------------------------------ */
+    function relTime(sec: number): { label: string; isExpired: boolean } {
       const now = Date.now() / 1000;
-      let tag = '';
-      if (isExp) {
-        tag =
-          sec < now
-            ? `<span class="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-600 dark:bg-red-500/10 dark:text-red-400">${TXT.expired}</span>`
-            : `<span class="ml-2 rounded bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">${TXT.valid}</span>`;
-      }
-      return `<div class="text-zinc-600 dark:text-zinc-300"><span class="text-zinc-400">${label}:</span> ${fmt(sec * 1000)}${tag}</div>`;
+      const diff = sec - now;
+      const abs = Math.abs(diff);
+      let unit: string;
+      if (abs < 60)        unit = L === 'en' ? `${Math.round(abs)}s`                          : `${Math.round(abs)} 秒`;
+      else if (abs < 3600) unit = L === 'en' ? `${Math.round(abs / 60)}m`                     : `${Math.round(abs / 60)} 分钟`;
+      else if (abs < 86400)unit = L === 'en' ? `${Math.round(abs / 3600)}h`                   : `${Math.round(abs / 3600)} 小时`;
+      else                 unit = L === 'en' ? `${Math.round(abs / 86400)} day${Math.round(abs/86400)===1?'':'s'}` : `${Math.round(abs / 86400)} 天`;
+
+      if (diff < 0) return { label: T.expiredAgo(unit), isExpired: true };
+      return { label: T.expiresIn(unit), isExpired: false };
     }
 
+    /* ------------------------------------------------------------------ */
+    /* JSON syntax highlighting — safe DOM-only, no innerHTML with data    */
+    /* ------------------------------------------------------------------ */
+    type TType = 'key' | 'str' | 'num' | 'bool' | 'null' | 'punct' | 'ws';
+
+    function tokenize(json: string): { t: TType; v: string }[] {
+      const toks: { t: TType; v: string }[] = [];
+      let i = 0;
+      while (i < json.length) {
+        const ch = json[i];
+        // whitespace
+        if (/\s/.test(ch)) {
+          let ws = '';
+          while (i < json.length && /\s/.test(json[i])) ws += json[i++];
+          toks.push({ t: 'ws', v: ws });
+          continue;
+        }
+        // string
+        if (ch === '"') {
+          let s = '"';
+          i++;
+          while (i < json.length) {
+            if (json[i] === '\\') { s += json[i] + json[i + 1]; i += 2; }
+            else if (json[i] === '"') { s += '"'; i++; break; }
+            else { s += json[i++]; }
+          }
+          // peek ahead past whitespace to check for ':'
+          let j = i;
+          while (j < json.length && /\s/.test(json[j])) j++;
+          toks.push({ t: json[j] === ':' ? 'key' : 'str', v: s });
+          continue;
+        }
+        // number
+        if (ch === '-' || /[0-9]/.test(ch)) {
+          let n = '';
+          while (i < json.length && /[-+0-9.eE]/.test(json[i])) n += json[i++];
+          toks.push({ t: 'num', v: n });
+          continue;
+        }
+        // keywords
+        if (json.startsWith('true', i))  { toks.push({ t: 'bool', v: 'true'  }); i += 4; continue; }
+        if (json.startsWith('false', i)) { toks.push({ t: 'bool', v: 'false' }); i += 5; continue; }
+        if (json.startsWith('null', i))  { toks.push({ t: 'null', v: 'null'  }); i += 4; continue; }
+        // punctuation
+        toks.push({ t: 'punct', v: ch });
+        i++;
+      }
+      return toks;
+    }
+
+    const COLOR: Record<TType, string> = {
+      key:   'color:#a78bfa',   // violet-400
+      str:   'color:#34d399',   // emerald-400
+      num:   'color:#fbbf24',   // amber-400
+      bool:  'color:#f87171',   // red-400
+      null:  'color:#71717a',   // zinc-500
+      punct: 'color:#d4d4d8',   // zinc-300
+      ws:    '',
+    };
+
+    function renderHighlight(obj: unknown, target: Element) {
+      const json = JSON.stringify(obj, null, 2);
+      const frag = document.createDocumentFragment();
+      for (const tok of tokenize(json)) {
+        if (tok.t === 'ws' || !COLOR[tok.t]) {
+          frag.appendChild(document.createTextNode(tok.v));
+        } else {
+          const sp = document.createElement('span');
+          sp.style.cssText = COLOR[tok.t];
+          sp.textContent = tok.v;
+          frag.appendChild(sp);
+        }
+      }
+      target.textContent = '';
+      target.appendChild(frag);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Claim row builder — all user values through textContent             */
+    /* ------------------------------------------------------------------ */
+    function claimRow(label: string, valueNode: Node, badge?: { text: string; isExpired: boolean }) {
+      const row = document.createElement('div');
+      row.className = 'flex flex-wrap items-start gap-x-3 gap-y-1';
+
+      const lbl = document.createElement('span');
+      lbl.className = 'min-w-[5.5rem] shrink-0 text-sm text-zinc-500 dark:text-zinc-400';
+      lbl.textContent = label;
+      row.appendChild(lbl);
+
+      const val = document.createElement('span');
+      val.className = 'text-sm font-mono text-zinc-800 dark:text-zinc-200 break-all';
+      val.appendChild(valueNode);
+      row.appendChild(val);
+
+      if (badge) {
+        const bg = document.createElement('span');
+        if (badge.isExpired) {
+          bg.className = 'rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:bg-red-500/10 dark:text-red-400';
+        } else {
+          bg.className = 'rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400';
+        }
+        bg.textContent = badge.text;
+        row.appendChild(bg);
+      }
+
+      return row;
+    }
+
+    function textNode(s: string): Text { return document.createTextNode(s); }
+
+    /* ------------------------------------------------------------------ */
+    /* Main decode & render                                                 */
+    /* ------------------------------------------------------------------ */
     function run() {
-      const v = inEl.value.trim();
+      const raw = inp.value.trim();
+
+      // reset
+      errEl.textContent = '';
       errEl.classList.add('hidden');
-      if (!v) {
-        result.classList.add('hidden');
-        return;
-      }
-      const parts = v.split('.');
-      if (parts.length < 2) {
-        result.classList.add('hidden');
-        errEl.textContent = TXT.errFormat;
+      result.classList.add('hidden');
+
+      if (!raw) return;
+
+      const parts = raw.split('.');
+      if (parts.length !== 3) {
+        errEl.textContent = T.errFormat;
         errEl.classList.remove('hidden');
         return;
       }
+
+      let header: Record<string, unknown>, payload: Record<string, unknown>;
       try {
-        const header = JSON.parse(b64urlDecode(parts[0]));
-        const payload = JSON.parse(b64urlDecode(parts[1]));
-        headerEl.textContent = JSON.stringify(header, null, 2);
-        payloadEl.textContent = JSON.stringify(payload, null, 2);
-        let rows = '';
-        if (typeof payload.iat === 'number') rows += timeRow(TXT.iat, payload.iat, false);
-        if (typeof payload.nbf === 'number') rows += timeRow(TXT.nbf, payload.nbf, false);
-        if (typeof payload.exp === 'number') rows += timeRow(TXT.exp, payload.exp, true);
-        timesEl.innerHTML = rows;
-        result.classList.remove('hidden');
+        header  = JSON.parse(b64urlDecode(parts[0]));
+        payload = JSON.parse(b64urlDecode(parts[1]));
       } catch {
-        result.classList.add('hidden');
-        errEl.textContent = TXT.errDecode;
+        errEl.textContent = T.errDecode;
         errEl.classList.remove('hidden');
+        return;
       }
+
+      /* -- Key Claims -------------------------------------------------- */
+      claims.textContent = '';
+
+      // alg (from header)
+      if (header.alg != null) {
+        const algBadge = document.createElement('span');
+        algBadge.className = 'rounded-full bg-violet-100 px-2.5 py-0.5 text-xs font-medium text-violet-700 dark:bg-violet-500/10 dark:text-violet-400';
+        algBadge.textContent = String(header.alg);
+        claims.appendChild(claimRow(T.alg, algBadge));
+      }
+
+      // exp
+      if (typeof payload.exp === 'number') {
+        const { label, isExpired } = relTime(payload.exp);
+        const dateText = fmtDate(payload.exp * 1000);
+        claims.appendChild(claimRow(T.exp, textNode(dateText), { text: label, isExpired }));
+      }
+
+      // iat
+      if (typeof payload.iat === 'number') {
+        claims.appendChild(claimRow(T.iat, textNode(fmtDate(payload.iat * 1000))));
+      }
+
+      // iss, sub, aud
+      if (payload.iss != null) {
+        claims.appendChild(claimRow(T.iss, textNode(String(payload.iss))));
+      }
+      if (payload.sub != null) {
+        claims.appendChild(claimRow(T.sub, textNode(String(payload.sub))));
+      }
+      if (payload.aud != null) {
+        const audVal = Array.isArray(payload.aud) ? payload.aud.join(', ') : String(payload.aud);
+        claims.appendChild(claimRow(T.aud, textNode(audVal)));
+      }
+
+      /* -- JSON blocks ------------------------------------------------- */
+      renderHighlight(header, hdrEl);
+      renderHighlight(payload, pldEl);
+
+      /* -- Signature --------------------------------------------------- */
+      sigEl.textContent = parts[2];
+
+      result.classList.remove('hidden');
     }
 
-    inEl.addEventListener('input', run);
+    /* ------------------------------------------------------------------ */
+    /* Event listeners                                                      */
+    /* ------------------------------------------------------------------ */
+    inp.addEventListener('input', run);
+
+    document.getElementById('clearBtn')!.addEventListener('click', () => {
+      inp.value = '';
+      errEl.textContent = '';
+      errEl.classList.add('hidden');
+      result.classList.add('hidden');
+      inp.focus();
+    });
+
+    // Auto-decode if textarea already has content (e.g. browser autofill)
+    if (inp.value.trim()) run();
   </script>
 </ToolPageLayout>
