@@ -16,11 +16,21 @@ function articleLastmods() {
   for (const tool of readdirSync(base, { withFileTypes: true })) {
     if (!tool.isDirectory()) continue;
     const dir = new URL(`${tool.name}/`, base);
-    for (const file of readdirSync(dir)) {
-      if (!file.endsWith('.md')) continue;
-      const fm = readFileSync(new URL(file, dir), 'utf8');
-      const m = fm.match(/^updated:\s*["']?([\d-]+)["']?/m);
-      if (m) map.set(`${SITE}/${tool.name}/${file.replace(/\.md$/, '')}`, m[1]);
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory() && entry.name === 'en') {
+        // 英文文章在 <tool>/en/<slug>.md → /en/<tool>/<slug>
+        const enDir = new URL(`en/`, dir);
+        for (const file of readdirSync(enDir)) {
+          if (!file.endsWith('.md')) continue;
+          const fm = readFileSync(new URL(file, enDir), 'utf8');
+          const m = fm.match(/^updated:\s*["']?([\d-]+)["']?/m);
+          if (m) map.set(`${SITE}/en/${tool.name}/${file.replace(/\.md$/, '')}`, m[1]);
+        }
+      } else if (entry.name.endsWith('.md')) {
+        const fm = readFileSync(new URL(entry.name, dir), 'utf8');
+        const m = fm.match(/^updated:\s*["']?([\d-]+)["']?/m);
+        if (m) map.set(`${SITE}/${tool.name}/${entry.name.replace(/\.md$/, '')}`, m[1]);
+      }
     }
   }
   return map;

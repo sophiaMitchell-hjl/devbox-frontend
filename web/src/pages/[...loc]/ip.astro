@@ -95,24 +95,35 @@ const copy = {
     }
 
     function row(label: string, val?: string) {
-      if (!val) return '';
-      return `<div class="flex items-center justify-between gap-3 py-2.5"><span class="text-sm text-zinc-500 dark:text-zinc-400">${label}</span><span class="text-right font-mono text-sm text-zinc-800 dark:text-zinc-100">${val}</span></div>`;
+      if (!val) return null;
+      const wrap = document.createElement('div');
+      wrap.className = 'flex items-center justify-between gap-3 py-2.5';
+      const l = document.createElement('span');
+      l.className = 'text-sm text-zinc-500 dark:text-zinc-400';
+      l.textContent = label;
+      const v = document.createElement('span');
+      v.className = 'text-right font-mono text-sm text-zinc-800 dark:text-zinc-100';
+      v.textContent = val;
+      wrap.append(l, v);
+      return wrap;
     }
 
     async function load() {
       err.classList.add('hidden');
       bigEl.textContent = TXT.querying;
-      out.innerHTML = '';
+      out.replaceChildren();
       try {
         const d = await apiGet<IpInfo>('/api/ip');
         bigEl.textContent = d.ip || TXT.unknown;
         const loc = [d.country, d.region, d.city].filter(Boolean).join(' · ');
-        out.innerHTML =
-          row(TXT.location, loc) +
-          row(TXT.isp, d.isp) +
-          row(TXT.timezone, d.timezone) +
-          row(TXT.browserLang, d.language) +
-          row('User-Agent', d.userAgent);
+        const rows = [
+          row(TXT.location, loc),
+          row(TXT.isp, d.isp),
+          row(TXT.timezone, d.timezone),
+          row(TXT.browserLang, d.language),
+          row('User-Agent', d.userAgent),
+        ].filter((r): r is HTMLElement => r !== null);
+        out.append(...rows);
       } catch {
         bigEl.textContent = '—';
         err.textContent = TXT.err;

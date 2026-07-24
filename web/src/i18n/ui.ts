@@ -28,6 +28,8 @@ export const ui = {
     'tool.faq': '常见问题',
     'tool.deepDive': '深入了解',
     'tool.related': '相关工具',
+    'tool.open': '打开 →',
+    'tool.soon': '即将上线',
     // ArticleLayout
     'article.author': 'DevBox 团队',
     'article.updated': '最后更新',
@@ -58,6 +60,8 @@ export const ui = {
     'tool.faq': 'FAQ',
     'tool.deepDive': 'Learn more',
     'tool.related': 'Related tools',
+    'tool.open': 'Open →',
+    'tool.soon': 'Coming soon',
     'article.author': 'DevBox Team',
     'article.updated': 'Last updated',
     'article.ctaPrefix': 'Want to generate directly? Try',

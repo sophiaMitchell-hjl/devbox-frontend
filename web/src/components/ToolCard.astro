@@ -2,14 +2,12 @@
 import type { ResolvedTool } from '../lib/tools';
 import { categoryLabels } from '../lib/tools';
 import { localePath, type Lang } from '../i18n';
+import { useUI } from '../i18n/ui';
 const { tool, lang } = Astro.props as { tool: ResolvedTool; lang: Lang };
 const live = tool.status === 'live';
 const Tag = live ? 'a' : 'div';
 const labels = categoryLabels(lang);
-const t = {
-  open: lang === 'en' ? 'Open →' : '打开 →',
-  soon: lang === 'en' ? 'Coming soon' : '即将上线',
-};
+const t = useUI(lang);
 ---
 
 <Tag
@@ -30,11 +28,11 @@ const t = {
     {
       live ? (
         <span class="text-xs font-medium text-violet-500 opacity-0 transition-opacity group-hover:opacity-100">
-          {t.open}
+          {t('tool.open')}
         </span>
       ) : (
         <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
-          {t.soon}
+          {t('tool.soon')}
         </span>
       )
     }

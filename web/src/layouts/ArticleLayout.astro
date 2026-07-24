@@ -60,7 +60,7 @@ const articleJsonLd = {
   description,
   inLanguage: lang === 'en' ? 'en' : 'zh-CN',
   mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
-  image: `${siteUrl}/og-default.png`,
+  image: `${siteUrl}/${lang === 'en' ? 'og-default-en.png' : 'og-default.png'}`,
   author: { '@type': 'Organization', name: t('article.author'), url: siteUrl },
   publisher: {
     '@type': 'Organization',

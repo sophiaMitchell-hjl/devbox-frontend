@@ -11,9 +11,10 @@ const tierLabels =
   lang === 'en'
     ? { core: 'Start here', advanced: 'Advanced · reference as needed' }
     : { core: '入门必看', advanced: '进阶 · 按需查阅' };
+const { core, advanced } = splitByTier(articles);
 const tiers = [
-  { label: tierLabels.core, items: splitByTier(articles).core },
-  { label: tierLabels.advanced, items: splitByTier(articles).advanced },
+  { label: tierLabels.core, items: core },
+  { label: tierLabels.advanced, items: advanced },
 ];
 const deepDiveHeading = lang === 'en' ? 'Learn more about regex' : '深入了解正则';
 

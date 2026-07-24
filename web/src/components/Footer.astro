@@ -3,7 +3,7 @@ import { useUI } from '../i18n/ui';
 import { localePath, type Lang } from '../i18n';
 const { lang } = Astro.props as { lang: Lang };
 const t = useUI(lang);
-const year = 2026;
+const year = new Date().getFullYear();
 ---
 
 <footer class="mt-24 border-t border-zinc-200/70 dark:border-zinc-800/70">
